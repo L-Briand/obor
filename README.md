@@ -5,6 +5,14 @@ A JVM CBOR serializer/deserializer implementation with kotlinx-serialization.
 
 ## Usage
 
+From maven central :
+
+```groovy
+dependencies {
+    implementation "net.orandja.obor:obor:0.1.0"
+}
+```
+
 It uses conventionnal encode/decode kotlinx-serialization functions like JSON.
 You can take a look on how it works [here](https://github.com/Kotlin/kotlinx.serialization#introduction-and-references).
 
