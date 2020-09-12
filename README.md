@@ -70,9 +70,9 @@ class Data(
 
 `chunkSize` define the number of element before the structure become infinite. 
 `chunkSize` of `0` means its always infinite. A negative value is the same as the default implementation: always try to write the size.  
-* If applied to a class or an object: `chunkSize` correspond the number of fields before the structure is serialize with infinite Mark.
-* If applied on a Map or a List: `chunkSize` correspond to the number of elements before the list is serialize with infinite Mark. 
-* If applied on a String or a ByteArray with `@CborRawBytes`: `chunksize` correspond to the length in which the element is chunk.
+- If applied to a class or an object: `chunkSize` correspond to the numbers of fields before the structure is serialize with infinite Mark.
+- If applied on a Map or a List: `chunkSize` correspond to the number of elements before the list is serialize with infinite Mark. 
+- If applied on a String or a ByteArray with `@CborRawBytes`: `chunksize` correspond to the length in which the element is chunked.
 
 ```kotlin
 @Serializable
@@ -160,11 +160,10 @@ fun main() {
 
 ## Misc
 
-- Kotlin documentation.
-- Publication on maven.
+- Better Kotlin documentation.
 - Deserialization exceptions.
 - `@Serializer` for Unsigned types.
-- Documentation on multiple files.
+- Documentation on multiple md files.
 
 ## Annotations
 
@@ -179,7 +178,11 @@ If require == true then the tag is require during deserialization.
 
 ### `CborRequire`
 
-A field who can't be skip when decoded.
+An unskippable field.
+
+### `CborSkip`
+
+Do not write this field.
 
 ## Tests
 

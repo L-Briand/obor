@@ -8,58 +8,66 @@ import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.AbstractEncoder
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.modules.SerializersModule
+import net.orandja.obor.annotations.CborRawBytes
 import net.orandja.obor.codec.*
 import net.orandja.obor.codec.writer.CborWriter
 
+/**
+ * Default Cbor decoder.
+ *
+ * @param writer Something that writes Cbor header and bytes.
+ * @see CborWriter
+ */
 @ExperimentalSerializationApi
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
 internal open class CborEncoder(
-    protected val out: CborWriter,
+    protected val writer: CborWriter,
     override val serializersModule: SerializersModule
 ) : AbstractEncoder(), CompositeEncoder {
 
     override fun encodeBoolean(value: Boolean) =
-        if (value) out.write(HEADER_TRUE)
-        else out.write(HEADER_FALSE)
+        if (value) writer.write(HEADER_TRUE)
+        else writer.write(HEADER_FALSE)
 
     override fun encodeByte(value: Byte) {
         val v = value.toUByte()
-        if (v > BYTE_NEG) out.writeMajor8(MAJOR_NEGATIVE, (v xor BYTE_FF))
-        else out.writeMajor8(MAJOR_POSITIVE, v)
+        if (v > BYTE_NEG) writer.writeMajor8(MAJOR_NEGATIVE, (v xor BYTE_FF))
+        else writer.writeMajor8(MAJOR_POSITIVE, v)
     }
 
     override fun encodeShort(value: Short) {
         val v = value.toUShort()
-        if (v > SHORT_NEG) out.writeMajor16(MAJOR_NEGATIVE, (v xor SHORT_FF))
-        else out.writeMajor16(MAJOR_POSITIVE, v)
+        if (v > SHORT_NEG) writer.writeMajor16(MAJOR_NEGATIVE, (v xor SHORT_FF))
+        else writer.writeMajor16(MAJOR_POSITIVE, v)
     }
 
     override fun encodeInt(value: Int) {
         val v = value.toUInt()
-        if (v and INT_NEG > 0u) out.writeMajor32(MAJOR_NEGATIVE, (v xor INT_FF))
-        else out.writeMajor32(MAJOR_POSITIVE, v)
+        if (v and INT_NEG > 0u) writer.writeMajor32(MAJOR_NEGATIVE, (v xor INT_FF))
+        else writer.writeMajor32(MAJOR_POSITIVE, v)
     }
 
     override fun encodeLong(value: Long) {
         val v = value.toULong()
-        if (v and LONG_NEG > 0u) out.writeMajor64(MAJOR_NEGATIVE, (v xor LONG_FF))
-        else out.writeMajor64(MAJOR_POSITIVE, v)
+        if (v and LONG_NEG > 0u) writer.writeMajor64(MAJOR_NEGATIVE, (v xor LONG_FF))
+        else writer.writeMajor64(MAJOR_POSITIVE, v)
     }
 
-    override fun encodeFloat(value: Float) = out.writeHeader32(HEADER_FLOAT_32, value.toRawBits().toUInt())
-    override fun encodeDouble(value: Double) = out.writeHeader64(HEADER_FLOAT_64, value.toRawBits().toULong())
-    override fun encodeNull() = out.write(HEADER_NULL)
+    override fun encodeFloat(value: Float) = writer.writeHeader32(HEADER_FLOAT_32, value.toRawBits().toUInt())
+    override fun encodeDouble(value: Double) = writer.writeHeader64(HEADER_FLOAT_64, value.toRawBits().toULong())
+    override fun encodeNull() = writer.write(HEADER_NULL)
 
     // chars are UTF-16 and can't be translated to UTF-8... or maybe ? didn't find.
     override fun encodeChar(value: Char) = encodeString(value.toString())
 
     override fun encodeString(value: String) {
         val bytes = value.toByteArray(Charsets.UTF_8)
-        out.writeMajor32(MAJOR_TEXT, bytes.size.toUInt())
-        out.write(bytes.asUByteArray())
+        writer.writeMajor32(MAJOR_TEXT, bytes.size.toUInt())
+        writer.write(bytes.asUByteArray())
     }
 
+    // in a future : add possibility to write enums as Int
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
         encodeString(enumDescriptor.getElementName(index))
     }
@@ -67,42 +75,42 @@ internal open class CborEncoder(
     /** used by Collections encoders to indicate the size of a chunk before an element become infinite */
     protected open var chunkSize: Int = -1
 
-    /** indicate that the next element is a CBOR Byte string */
+    /** next element is a CBOR Byte string */
     protected open var isRawBytes: Boolean = false
 
     override fun beginCollection(descriptor: SerialDescriptor, collectionSize: Int): CompositeEncoder {
         if (descriptor == Descriptors.infiniteText)
-            return CborInfiniteTextEncoder(out, serializersModule, -1).beginCollection(descriptor, collectionSize)
+            return CborInfiniteTextEncoder(writer, serializersModule, -1).beginCollection(descriptor, collectionSize)
 
         if (isRawBytes) {
             if (!(descriptor.kind is StructureKind.LIST && descriptor.getElementDescriptor(0).kind is PrimitiveKind.BYTE))
-                throw IllegalStateException("@RawByte should be a list or array of bytes")
-            return CborByteStringEncoder(out, serializersModule, chunkSize).beginCollection(descriptor, collectionSize)
+                throw IllegalStateException("${CborRawBytes::class} should be a list or array of bytes")
+            return CborByteStringEncoder(writer, serializersModule, chunkSize).beginCollection(descriptor, collectionSize)
         }
 
         return when (descriptor.kind) {
-            is StructureKind.LIST -> CborListEncoder(out, serializersModule, chunkSize).beginCollection(descriptor, collectionSize)
-            is StructureKind.MAP -> CborMapEncoder(out, serializersModule, chunkSize).beginCollection(descriptor, collectionSize)
+            is StructureKind.LIST -> CborListEncoder(writer, serializersModule, chunkSize).beginCollection(descriptor, collectionSize)
+            is StructureKind.MAP -> CborMapEncoder(writer, serializersModule, chunkSize).beginCollection(descriptor, collectionSize)
             else -> beginStructure(descriptor)
         }
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
         if (descriptor == Descriptors.infiniteText)
-            return CborInfiniteTextEncoder(out, serializersModule, -1).beginStructure(descriptor)
+            return CborInfiniteTextEncoder(writer, serializersModule, -1).beginStructure(descriptor)
 
         if (isRawBytes) {
             if (!(descriptor.kind is StructureKind.LIST && descriptor.getElementDescriptor(0).kind is PrimitiveKind.BYTE))
-                throw IllegalStateException("@RawByte should be a list or array of bytes")
-            return CborByteStringEncoder(out, serializersModule, chunkSize).beginStructure(descriptor)
+                throw IllegalStateException("${CborRawBytes::class} should be a list or array of bytes")
+            return CborByteStringEncoder(writer, serializersModule, chunkSize).beginStructure(descriptor)
         }
 
         return when (descriptor.kind) {
-            is StructureKind.LIST -> CborListEncoder(out, serializersModule, -1).beginStructure(descriptor)
-            is StructureKind.MAP -> CborMapEncoder(out, serializersModule, -1).beginStructure(descriptor)
+            is StructureKind.LIST -> CborListEncoder(writer, serializersModule, -1).beginStructure(descriptor)
+            is StructureKind.MAP -> CborMapEncoder(writer, serializersModule, -1).beginStructure(descriptor)
             is StructureKind.CLASS, is StructureKind.OBJECT ->
-                CborStructureEncoder(out, serializersModule, chunkSize).beginCollection(descriptor, descriptor.elementsCount)
-            else -> throw IllegalStateException("Try to encode a structure but SerialDescriptor isn't a structure")
+                CborStructureEncoder(writer, serializersModule, chunkSize).beginCollection(descriptor, descriptor.elementsCount)
+            else -> throw IllegalStateException("Try to encode a ${descriptor.kind} but SerialDescriptor isn't a StructureKind")
         }
     }
 

@@ -103,4 +103,5 @@ internal object Descriptors {
     val infiniteText = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.any", StructureKind.LIST, string)
 }
 
+/** readeability sake */
 internal infix fun UByte.hasFlags(flags: UByte) = (this and flags) == flags

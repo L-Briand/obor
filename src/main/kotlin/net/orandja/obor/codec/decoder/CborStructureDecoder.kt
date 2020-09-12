@@ -11,15 +11,16 @@ import net.orandja.obor.codec.reader.CborReader
 @ExperimentalSerializationApi
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
-internal class CborStructureDecoder(input: CborReader, serializersModule: SerializersModule) :
-    CborCollectionDecoder(input, serializersModule) {
+internal class CborStructureDecoder(reader: CborReader, serializersModule: SerializersModule) :
+    CborCollectionDecoder(reader, serializersModule) {
     override val major: UByte = MAJOR_MAP
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (super.decodeElementIndex(descriptor) == CompositeDecoder.DECODE_DONE) return CompositeDecoder.DECODE_DONE
         var index = descriptor.getElementIndex(decodeString())
+        // element decoded not inside kotlin object representation
         while (index == CompositeDecoder.UNKNOWN_NAME) {
-            decodeValue()
+            decodeValue() // discard read element.
             if (super.decodeElementIndex(descriptor) == CompositeDecoder.DECODE_DONE) return CompositeDecoder.DECODE_DONE
             index = descriptor.getElementIndex(decodeString())
         }

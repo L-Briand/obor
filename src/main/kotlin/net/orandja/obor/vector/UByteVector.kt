@@ -1,8 +1,8 @@
 package net.orandja.obor.vector
 
 @ExperimentalUnsignedTypes
-internal class UByteVector : Vector<UByte> {
-    private var _array: UByteArray = UByteArray(32)
+internal class UByteVector(initialCapacity: Int = 32) : Vector<UByte> {
+    private var _array: UByteArray = UByteArray(initialCapacity)
     private var _size: Int = 0
 
     override val size: Int get() = _size
@@ -16,8 +16,8 @@ internal class UByteVector : Vector<UByte> {
         _array = newArray
     }
 
-    override fun get(index: Int): UByte = if (index < size) _array[index] else throw IndexOutOfBoundsException()
-    override fun set(index: Int, value: UByte) = if (index < size) _array[index] = value else throw IndexOutOfBoundsException()
+    override fun get(index: Int): UByte = if (index in 0 until size) _array[index] else throw IndexOutOfBoundsException()
+    override fun set(index: Int, value: UByte) = if (index in 0 until size) _array[index] = value else throw IndexOutOfBoundsException()
 
     override fun add(value: UByte) {
         ensureCapacity(1)
@@ -33,5 +33,9 @@ internal class UByteVector : Vector<UByte> {
         ensureCapacity(count)
         array.copyInto(_array, _size, offset, offset + count)
         _size += count
+    }
+
+    override fun clear() {
+        _size = 0
     }
 }

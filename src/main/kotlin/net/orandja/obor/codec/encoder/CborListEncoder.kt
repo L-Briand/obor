@@ -10,8 +10,8 @@ import net.orandja.obor.codec.writer.CborWriter
 @ExperimentalSerializationApi
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
-internal class CborListEncoder(out: CborWriter, serializersModule: SerializersModule, chunkSize: Int) :
-    CborCollectionEncoder(out, serializersModule, chunkSize) {
+internal class CborListEncoder(writer: CborWriter, serializersModule: SerializersModule, chunkSize: Int) :
+    CborCollectionEncoder(writer, serializersModule, chunkSize) {
     override val finiteToken: UByte = HEADER_ARRAY_START
     override val infiniteToken: UByte = HEADER_ARRAY_INFINITE
 }

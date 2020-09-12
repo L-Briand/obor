@@ -4,7 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
 import java.io.InputStream
 
-
+/** Implementation of [CborReader] for Java [InputStream] */
 @ExperimentalSerializationApi
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
@@ -20,7 +20,6 @@ internal class CborInputStreamReader(private val input: InputStream) : CborReade
         peek = null
     }
 
-    override fun peekConsume(): UByte = peek().also { consume() }
     override fun read(): UByte = input.read().toUByte()
     override fun read(bytes: Int): UByteArray = input.readNBytes(bytes).asUByteArray()
     override fun nextUByte(): UByte = read()
