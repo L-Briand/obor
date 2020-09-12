@@ -161,10 +161,9 @@ fun main() {
 ## Misc
 
 - Kotlin documentation.
-- Publication on maven.
 - Deserialization exceptions.
 - `@Serializer` for Unsigned types.
-- Documentation on multiple files.
+- Documentation on multiple md files.
 
 ## Annotations
 
