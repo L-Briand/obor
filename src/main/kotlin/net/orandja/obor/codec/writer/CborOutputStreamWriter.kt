@@ -7,6 +7,7 @@ import net.orandja.obor.codec.SIZE_64
 import net.orandja.obor.codec.SIZE_8
 import java.io.OutputStream
 
+/** Implementation of [CborWriter] for Java [OutputStream] */
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
 internal class CborOutputStreamWriter(private val delegate: OutputStream) : CborWriter {

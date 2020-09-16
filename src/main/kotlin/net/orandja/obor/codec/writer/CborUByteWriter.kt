@@ -7,12 +7,14 @@ import net.orandja.obor.codec.SIZE_64
 import net.orandja.obor.codec.SIZE_8
 import net.orandja.obor.vector.UByteVector
 
+/** Implementation of [CborWriter] for in memory ByteArray */
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
 internal class CborUByteWriter(private val delegate: UByteVector) : CborWriter {
     private val buffer = UByteArray(9) { 0u }
     override fun write(byte: UByte) = delegate.add(byte)
     override fun write(bytes: UByteArray) = delegate.add(bytes)
+
     override fun writeMajor8(major: UByte, value: UByte) {
         if (value < SIZE_8) delegate.add(major or value)
         else writeHeader8(major or SIZE_8, value)

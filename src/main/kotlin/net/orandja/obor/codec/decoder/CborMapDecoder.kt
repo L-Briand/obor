@@ -10,8 +10,8 @@ import net.orandja.obor.codec.reader.CborReader
 @ExperimentalSerializationApi
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
-internal class CborMapDecoder(input: CborReader, serializersModule: SerializersModule) :
-    CborCollectionDecoder(input, serializersModule) {
+internal class CborMapDecoder(reader: CborReader, serializersModule: SerializersModule) :
+    CborCollectionDecoder(reader, serializersModule) {
     override val major: UByte = MAJOR_MAP
 
     override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = super.decodeCollectionSize(descriptor) * 2

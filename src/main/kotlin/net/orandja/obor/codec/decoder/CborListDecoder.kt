@@ -9,7 +9,7 @@ import net.orandja.obor.codec.reader.CborReader
 @ExperimentalSerializationApi
 @InternalSerializationApi
 @ExperimentalUnsignedTypes
-internal class CborListDecoder(input: CborReader, serializersModule: SerializersModule) :
-    CborCollectionDecoder(input, serializersModule) {
+internal class CborListDecoder(reader: CborReader, serializersModule: SerializersModule) :
+    CborCollectionDecoder(reader, serializersModule) {
     override val major: UByte = MAJOR_ARRAY
 }

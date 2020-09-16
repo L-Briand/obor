@@ -1,5 +1,6 @@
 package net.orandja.obor.codec.reader
 
+/** Implementation of [CborReader] for in memory ByteArray */
 @ExperimentalUnsignedTypes
 internal class CborUByteReader(private val array: UByteArray) : CborReader {
     private var position = 0
@@ -19,8 +20,6 @@ internal class CborUByteReader(private val array: UByteArray) : CborReader {
     override fun consume() {
         peek = null
     }
-
-    override fun peekConsume(): UByte = peek().also { consume() }
 
     override fun nextUByte(): UByte = read()
 
