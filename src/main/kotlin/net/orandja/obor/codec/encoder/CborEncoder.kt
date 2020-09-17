@@ -7,7 +7,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.AbstractEncoder
 import kotlinx.serialization.encoding.CompositeEncoder
+import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.modules.SerializersModule
+import kotlinx.serialization.serializer
 import net.orandja.obor.annotations.CborRawBytes
 import net.orandja.obor.codec.*
 import net.orandja.obor.codec.writer.CborWriter
@@ -67,7 +69,7 @@ internal open class CborEncoder(
         writer.write(bytes.asUByteArray())
     }
 
-    // in a future : add possibility to write enums as Int
+    // TODO : Enums as ints
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
         encodeString(enumDescriptor.getElementName(index))
     }
@@ -115,4 +117,38 @@ internal open class CborEncoder(
     }
 
     override fun endStructure(descriptor: SerialDescriptor) = Unit
+
+    override fun encodeValue(value: Any) = when (value) {
+        is Boolean -> encodeBoolean(value)
+        is Byte -> encodeByte(value)
+        is Short -> encodeShort(value)
+        is Int -> encodeInt(value)
+        is Long -> encodeLong(value)
+        is Float -> encodeFloat(value)
+        is Double -> encodeDouble(value)
+        is Char -> encodeChar(value)
+        is String -> encodeString(value)
+
+        is BooleanArray -> encodeStructure(Descriptors.array) { value.forEach { encodeBoolean(it) } }
+        is ByteArray -> encodeStructure(Descriptors.array) { value.forEach { encodeByte(it) } }
+        is ShortArray -> encodeStructure(Descriptors.array) { value.forEach { encodeShort(it) } }
+        is IntArray -> encodeStructure(Descriptors.array) { value.forEach { encodeInt(it) } }
+        is LongArray -> encodeStructure(Descriptors.array) { value.forEach { encodeLong(it) } }
+        is FloatArray -> encodeStructure(Descriptors.array) { value.forEach { encodeFloat(it) } }
+        is DoubleArray -> encodeStructure(Descriptors.array) { value.forEach { encodeDouble(it) } }
+        is CharArray -> encodeStructure(Descriptors.array) { value.forEach { encodeChar(it) } }
+
+        is Enum<*> -> encodeEnum(Descriptors.enum, value.ordinal)
+
+        is Map<*, *> -> encodeStructure(Descriptors.array) {
+            value.forEach {
+                encodeNullableSerializableValue(serializersModule.serializer(), it.key)
+                encodeNullableSerializableValue(serializersModule.serializer(), it.value)
+            }
+        }
+        is Iterable<*> -> encodeStructure(Descriptors.array) {
+            value.forEach { encodeNullableSerializableValue(serializersModule.serializer(), it) }
+        }
+        else -> super.encodeValue(value)
+    }
 }

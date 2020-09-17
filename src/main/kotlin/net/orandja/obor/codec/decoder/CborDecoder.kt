@@ -166,7 +166,7 @@ internal open class CborDecoder(
     override fun decodeValue(): Any {
         val it = reader.peek()
         when {
-            // TODO : Handle MAJOR_BYTE - crash when major byte is skip
+            // it hasFlags MAJOR_BYTE -> return decode
             it hasFlags MAJOR_TEXT -> return decodeString()
             it hasFlags MAJOR_MAP -> return decodeMap()
             it hasFlags MAJOR_ARRAY -> return beginStructure(Descriptors.array)
@@ -204,12 +204,12 @@ internal open class CborDecoder(
     /** Generic map decoding */
     private fun decodeMap() = decodeStructure(Descriptors.map) {
         (this as? CborDecoder) ?: throw CborDecoderException.Default
-        val result = mutableMapOf<Any, Any>()
+        val result = mutableMapOf<Any, Any?>()
         while (true) {
             decodeElementIndex(Descriptors.any).takeIf { it != CompositeDecoder.DECODE_DONE } ?: break
             val key = decodeValue()
             decodeElementIndex(Descriptors.any).takeIf { it != CompositeDecoder.DECODE_DONE } ?: throw CborDecoderException.Default
-            result[key] = decodeValue()
+            result[key] = if (!decodeNotNullMark()) decodeNull() else decodeValue()
         }
         result
     }

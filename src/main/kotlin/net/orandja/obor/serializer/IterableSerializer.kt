@@ -1,4 +1,4 @@
-package net.orandja.obor.codec
+package net.orandja.obor.serializer
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.InternalSerializationApi
@@ -12,6 +12,7 @@ import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlinx.serialization.encoding.encodeStructure
 
+/** Encode and decode any kind of collections */
 @ExperimentalSerializationApi
 @InternalSerializationApi
 @Serializer(forClass = Iterable::class)

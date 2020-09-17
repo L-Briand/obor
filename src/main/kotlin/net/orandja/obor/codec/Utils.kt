@@ -101,6 +101,8 @@ internal object Descriptors {
     // Used by codec for infinite text serialisation
     val string = PrimitiveSerialDescriptor("net.orandja.obor.codec.Descriptors.string", PrimitiveKind.STRING)
     val infiniteText = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.any", StructureKind.LIST, string)
+
+    val enum = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.enum", SerialKind.ENUM)
 }
 
 /** readeability sake */
