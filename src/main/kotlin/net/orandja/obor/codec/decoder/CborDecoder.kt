@@ -10,6 +10,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.codec.*
 import net.orandja.obor.codec.reader.CborReader
+import net.orandja.obor.vector.ByteVector
 import kotlin.collections.set
 import kotlin.experimental.xor
 
@@ -162,14 +163,13 @@ internal open class CborDecoder(
     /** By default decoder do not have element. */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int = CompositeDecoder.DECODE_DONE
 
-    // TODO: add a @Serializer for Map<Any?, Any?>
     override fun decodeValue(): Any {
         val it = reader.peek()
         when {
-            // it hasFlags MAJOR_BYTE -> return decode
+            it hasFlags MAJOR_BYTE -> return decodeByteString()
             it hasFlags MAJOR_TEXT -> return decodeString()
             it hasFlags MAJOR_MAP -> return decodeMap()
-            it hasFlags MAJOR_ARRAY -> return beginStructure(Descriptors.array)
+            it hasFlags MAJOR_ARRAY -> return decodeArray()
         }
         reader.consume()
         return when (it) {
@@ -189,6 +189,16 @@ internal open class CborDecoder(
             HEADER_NEGATIVE_64 -> ((reader.nextULong()).toLong().takeIf { it < 0 }?.xor(1L) ?: throw CborDecoderException.Default)
             else -> super.decodeValue()
         }
+    }
+
+    /** Special decoder for byteString */
+    private fun decodeByteString() = decodeStructure(Descriptors.array) {
+        (this as? CborDecoder) ?: throw CborDecoderException.Default
+        val result = ByteVector()
+        while (decodeElementIndex(Descriptors.any) != CompositeDecoder.DECODE_DONE) {
+            result.add(decodeByte())
+        }
+        result
     }
 
     /** Generic array decoding */
