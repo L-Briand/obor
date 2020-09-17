@@ -27,9 +27,6 @@ internal class CborByteStringEncoder(writer: CborWriter, serializersModule: Seri
     override val finiteToken: UByte = HEADER_BYTE_START
     override val infiniteToken: UByte = HEADER_BYTE_INFINITE
 
-    /** Index of the current element to encode. Only useful when byteString is infinite. */
-    private var index: Int = 0
-
     /** Buffer for infinite string. */
     private val buffer by lazy { UByteVector(chunkSize) }
 
@@ -41,13 +38,11 @@ internal class CborByteStringEncoder(writer: CborWriter, serializersModule: Seri
 
     private fun updateIndex() {
         if (isFinite) return
-        if (index == chunkSize) flush()
-        index += 1
+        if (buffer.size == chunkSize) flush()
     }
 
     private fun flush() {
-        if (isFinite && index < 0) return
-        index = 0
+        if (isFinite && buffer.size == 0) return
         writer.writeMajor32(MAJOR_BYTE, buffer.size.toUInt())
         writer.write(buffer.nativeArray)
         buffer.clear()
