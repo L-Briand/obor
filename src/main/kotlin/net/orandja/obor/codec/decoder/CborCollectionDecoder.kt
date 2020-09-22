@@ -6,9 +6,10 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.modules.SerializersModule
+import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.HEADER_BREAK
 import net.orandja.obor.codec.SIZE_INFINITE
-import net.orandja.obor.codec.hasFlags
+import net.orandja.obor.codec.hasMajor
 import net.orandja.obor.codec.reader.CborReader
 
 /** Base class for decoding all [StructureKind] */
@@ -44,7 +45,9 @@ internal abstract class CborCollectionDecoder(
         // if another structure is start inside this one
         // then delegate decoding by a new collection decoder created in the super function.
         if (beginDone) return super.beginStructure(descriptor)
-        if (!(reader.peek() hasFlags major)) throw CborDecoderException.Default
+        requiredTag = (descriptor.annotations.find { it is CborTag } as? CborTag)?.let { if (it.require) it.tag else -1 } ?: requiredTag
+        decodeTag()
+        if (!(reader.peek() hasMajor major)) throw CborDecoderException.Default
 
         isStructureInfinite = (reader.peek() and SIZE_INFINITE) == SIZE_INFINITE
         if (!isStructureInfinite) size = decodeCollectionSize(descriptor)

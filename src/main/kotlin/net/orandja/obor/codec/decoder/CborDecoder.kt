@@ -8,6 +8,7 @@ import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.modules.SerializersModule
+import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.*
 import net.orandja.obor.codec.reader.CborReader
 import net.orandja.obor.vector.ByteVector
@@ -28,12 +29,12 @@ internal open class CborDecoder(
     override val serializersModule: SerializersModule
 ) : AbstractDecoder() {
 
-    override fun decodeNotNullMark(): Boolean = reader.peek() != HEADER_NULL
-    override fun decodeNull(): Nothing? =
+    override fun decodeNotNullMark(): Boolean = decodeTag() but reader.peek() != HEADER_NULL
+    override fun decodeNull(): Nothing? = decodeTag() but
         if (reader.peekConsume() == HEADER_NULL) null
         else throw CborDecoderException.Default
 
-    override fun decodeBoolean(): Boolean = when (reader.peekConsume()) {
+    override fun decodeBoolean(): Boolean = decodeTag() but when (reader.peekConsume()) {
         HEADER_FALSE -> false
         HEADER_TRUE -> true
         else -> throw CborDecoderException.Default
@@ -41,17 +42,17 @@ internal open class CborDecoder(
 
     // TODO : decode HEADER_FLOAT_16
 
-    override fun decodeFloat(): Float = when (reader.peekConsume()) {
+    override fun decodeFloat(): Float = decodeTag() but when (reader.peekConsume()) {
         HEADER_FLOAT_32 -> Float.fromBits(reader.nextUInt().toInt())
         else -> throw CborDecoderException.Default
     }
 
-    override fun decodeDouble(): Double = when (reader.peekConsume()) {
+    override fun decodeDouble(): Double = decodeTag() but when (reader.peekConsume()) {
         HEADER_FLOAT_64 -> Double.fromBits(reader.nextULong().toLong())
         else -> decodeFloat().toDouble()
     }
 
-    override fun decodeByte(): Byte = when (val it = reader.peekConsume()) {
+    override fun decodeByte(): Byte = decodeTag() but when (val it = reader.peekConsume()) {
         in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toByte()
         in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toByte().xor(-1)
         HEADER_POSITIVE_8 -> reader.nextUByte().toByte()
@@ -61,7 +62,7 @@ internal open class CborDecoder(
         else -> throw CborDecoderException.Default
     }
 
-    override fun decodeShort(): Short = when (val it = reader.peekConsume()) {
+    override fun decodeShort(): Short = decodeTag() but when (val it = reader.peekConsume()) {
         in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toShort()
         in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toShort().xor(-1)
         HEADER_POSITIVE_8 -> reader.nextUByte().toShort()
@@ -73,7 +74,7 @@ internal open class CborDecoder(
         else -> throw CborDecoderException.Default
     }
 
-    override fun decodeInt(): Int = when (val it = reader.peekConsume()) {
+    override fun decodeInt(): Int = decodeTag() but when (val it = reader.peekConsume()) {
         in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toInt()
         in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toInt().xor(-1)
         HEADER_POSITIVE_8 -> reader.nextUByte().toInt()
@@ -87,7 +88,7 @@ internal open class CborDecoder(
         else -> throw CborDecoderException.Default
     }
 
-    override fun decodeLong(): Long = when (val it = reader.peekConsume()) {
+    override fun decodeLong(): Long = decodeTag() but when (val it = reader.peekConsume()) {
         in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toLong()
         in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toLong().xor(-1L)
         HEADER_POSITIVE_8 -> reader.nextUByte().toLong()
@@ -103,8 +104,9 @@ internal open class CborDecoder(
         else -> throw CborDecoderException.Default
     }
 
-    override fun decodeChar(): Char = decodeString().singleOrNull() ?: throw CborDecoderException.Default
+    override fun decodeChar(): Char = decodeTag() but decodeString().singleOrNull() ?: throw CborDecoderException.Default
     override fun decodeString(): String {
+        decodeTag()
         if (reader.peek() == HEADER_TEXT_INFINITE) return decodeInfiniteString()
         val size: Int = when (val peek = reader.peekConsume()) {
             in (HEADER_TEXT_START until HEADER_TEXT_8) -> (peek and 0x1Fu).toInt()
@@ -129,11 +131,11 @@ internal open class CborDecoder(
     }
 
     // TODO: Add enum decoding by index.
-    override fun decodeEnum(enumDescriptor: SerialDescriptor): Int = enumDescriptor.getElementIndex(decodeString())
+    override fun decodeEnum(enumDescriptor: SerialDescriptor): Int = decodeTag() but enumDescriptor.getElementIndex(decodeString())
 
     /**
-     * To avoid any missuses : It deny any size over [Int.MAX_VALUE] because it implies that something will be created in memory with
-     * more than or at least [Int.MAX_VALUE] bytes.
+     * To avoid any missuses : It deny any size over [Int.MAX_VALUE]
+     * because it implies that something will be created in memory with more than [Int.MAX_VALUE] bytes.
      */
     override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = when (val it = reader.peekConsume() and 0x1Fu) {
         in (SIZE_0 until SIZE_8) -> (it and 0x1Fu).toInt()
@@ -151,7 +153,7 @@ internal open class CborDecoder(
      * @see CborCollectionDecoder
      */
     override fun beginStructure(descriptor: SerialDescriptor): CompositeDecoder {
-        if (reader.peek() hasFlags MAJOR_BYTE) return CborByteStringDecoder(reader, serializersModule).beginStructure(descriptor)
+        if (reader.peek() hasMajor MAJOR_BYTE) return CborByteStringDecoder(reader, serializersModule).beginStructure(descriptor)
         if (descriptor == Descriptors.infiniteText) return CborInfiniteTextDecoder(reader, serializersModule).beginStructure(descriptor)
         return when (descriptor.kind) {
             is StructureKind.LIST -> CborListDecoder(reader, serializersModule).beginStructure(descriptor)
@@ -166,11 +168,12 @@ internal open class CborDecoder(
     override fun decodeValue(): Any {
         val it = reader.peek()
         when {
-            it hasFlags MAJOR_BYTE -> return decodeByteString()
-            it hasFlags MAJOR_TEXT -> return decodeString()
-            it hasFlags MAJOR_MAP -> return decodeMap()
-            it hasFlags MAJOR_ARRAY -> return decodeArray()
+            it hasMajor MAJOR_BYTE -> return decodeByteString()
+            it hasMajor MAJOR_TEXT -> return decodeString()
+            it hasMajor MAJOR_MAP -> return decodeMap()
+            it hasMajor MAJOR_ARRAY -> return decodeArray()
         }
+        decodeTag()
         reader.consume()
         return when (it) {
             HEADER_FALSE -> false
@@ -214,13 +217,37 @@ internal open class CborDecoder(
     /** Generic map decoding */
     private fun decodeMap() = decodeStructure(Descriptors.map) {
         (this as? CborDecoder) ?: throw CborDecoderException.Default
-        val result = mutableMapOf<Any, Any?>()
+        val result = mutableMapOf<Any?, Any?>()
         while (true) {
             decodeElementIndex(Descriptors.any).takeIf { it != CompositeDecoder.DECODE_DONE } ?: break
-            val key = decodeValue()
+            val key = if (!decodeNotNullMark()) decodeNull() else decodeValue()
             decodeElementIndex(Descriptors.any).takeIf { it != CompositeDecoder.DECODE_DONE } ?: throw CborDecoderException.Default
             result[key] = if (!decodeNotNullMark()) decodeNull() else decodeValue()
         }
         result
     }
+
+    protected var requiredTag = -1L
+
+    open fun decodeTag() {
+        val require = requiredTag
+        requiredTag = -1
+        val noTag = !(reader.peek() hasMajor MAJOR_TAG)
+        // field has a required tag but cbor message don't have one
+        if (noTag && require != -1L) throw CborDecoderException.Default
+        if (noTag) return
+        val tag = when (val peek = reader.peekConsume()) {
+            in (HEADER_TAG_START until HEADER_TAG_8) -> (peek and 0x1Fu).toLong()
+            HEADER_TAG_8 -> reader.nextUByte().toLong()
+            HEADER_TAG_16 -> reader.nextUShort().toLong()
+            HEADER_TAG_32 -> reader.nextUInt().toLong()
+            HEADER_TAG_64 -> reader.nextULong().toLong()
+            else -> throw CborDecoderException.Default
+        }
+        if (require == -1L) return
+        if (tag != require) throw CborDecoderException.Default
+        requiredTag = -1L
+    }
+
+    private infix fun <T : Any?, R : Any?> T.but(r: R): R = r
 }

@@ -6,7 +6,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.codec.HEADER_BREAK
 import net.orandja.obor.codec.MAJOR_BYTE
-import net.orandja.obor.codec.hasFlags
+import net.orandja.obor.codec.hasMajor
 import net.orandja.obor.codec.reader.CborReader
 
 /** A special decoder for Major 2 (BYTES) */
@@ -24,7 +24,7 @@ internal class CborByteStringDecoder(
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         // The peeked value is a subarray of bytes because byte string is infinite.
-        if (isStructureInfinite && reader.peek() != HEADER_BREAK && reader.peek() hasFlags major && innerCollectionSize == 0)
+        if (isStructureInfinite && reader.peek() != HEADER_BREAK && reader.peek() hasMajor major && innerCollectionSize == 0)
             innerCollectionSize = decodeCollectionSize(descriptor)
         return super.decodeElementIndex(descriptor)
     }

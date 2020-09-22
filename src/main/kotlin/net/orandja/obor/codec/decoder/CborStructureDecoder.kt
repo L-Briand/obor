@@ -5,6 +5,8 @@ import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.modules.SerializersModule
+import net.orandja.obor.annotations.CborRawBytes
+import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.MAJOR_MAP
 import net.orandja.obor.codec.reader.CborReader
 
@@ -24,6 +26,9 @@ internal class CborStructureDecoder(reader: CborReader, serializersModule: Seria
             if (super.decodeElementIndex(descriptor) == CompositeDecoder.DECODE_DONE) return CompositeDecoder.DECODE_DONE
             index = descriptor.getElementIndex(decodeString())
         }
+
+        requiredTag = (descriptor.getElementAnnotations(index).find { it is CborTag } as? CborTag)?.tag ?: -1
+
         return index
     }
 }
