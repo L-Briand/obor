@@ -86,6 +86,12 @@ class Data(
 )
 ```
 
+### `CborTag(tagNumber: Long, require: Boolean)`
+ 
+A class with this annotation will be serialized with the corresponding [CBOR Tag](https://tools.ietf.org/html/rfc7049#section-2.4).
+It can also be applied to field. If require == true then the tag is require during deserialization.
+
+
 ## Skipped fields
 
 If a field key isn't present in the class or object declaration but is inside a CBOR message it is ommited by the decoder.
@@ -170,11 +176,6 @@ fun main() {
 ### `Float16`
 
 Annotate a Float to transform it into a IEEE 754 Half-Precision Float. 
-
-### `CborTag(tagNumber: Long, require: Boolean)`
- 
-A class with this annotation will be serialized with the corresponding [CBOR Tag](https://tools.ietf.org/html/rfc7049#section-2.4).
-If require == true then the tag is require during deserialization.
 
 ### `CborRequire`
 

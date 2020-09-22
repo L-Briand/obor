@@ -7,6 +7,7 @@ import kotlinx.serialization.encoding.encodeStructure
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.annotations.CborInfinite
 import net.orandja.obor.annotations.CborRawBytes
+import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.Descriptors
 import net.orandja.obor.codec.HEADER_MAP_INFINITE
 import net.orandja.obor.codec.HEADER_MAP_START
@@ -25,6 +26,7 @@ internal class CborStructureEncoder(writer: CborWriter, serializersModule: Seria
         // check for special feature fields
         chunkSize = (descriptor.getElementAnnotations(index).find { it is CborInfinite } as? CborInfinite)?.chunkSize ?: -1
         isRawBytes = descriptor.getElementAnnotations(index).any { it is CborRawBytes }
+        encodeTag((descriptor.getElementAnnotations(index).find { it is CborTag } as? CborTag)?.tag ?: -1)
         return true
     }
 

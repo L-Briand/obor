@@ -106,4 +106,4 @@ internal object Descriptors {
 }
 
 /** readeability sake */
-internal infix fun UByte.hasFlags(flags: UByte) = (this and flags) == flags
+internal infix fun UByte.hasMajor(flags: UByte) = ((this and 0xE0u) == flags)

@@ -80,6 +80,9 @@ internal open class CborEncoder(
     /** next element is a CBOR Byte string */
     protected open var isRawBytes: Boolean = false
 
+    /** next element tag */
+    protected open var tag: Long = -1
+
     override fun beginCollection(descriptor: SerialDescriptor, collectionSize: Int): CompositeEncoder {
         if (descriptor == Descriptors.infiniteText)
             return CborInfiniteTextEncoder(writer, serializersModule, -1).beginCollection(descriptor, collectionSize)
@@ -150,5 +153,9 @@ internal open class CborEncoder(
             value.forEach { encodeNullableSerializableValue(serializersModule.serializer(), it) }
         }
         else -> super.encodeValue(value)
+    }
+
+    protected fun encodeTag(tag: Long) {
+        if (tag != -1L) writer.writeMajor64(MAJOR_TAG, tag.toULong())
     }
 }

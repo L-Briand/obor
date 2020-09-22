@@ -7,6 +7,7 @@ import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.annotations.CborInfinite
+import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.HEADER_BREAK
 import net.orandja.obor.codec.writer.CborWriter
 
@@ -40,6 +41,9 @@ internal abstract class CborCollectionEncoder(
         if (beginDone) return super.beginCollection(descriptor, collectionSize)
         // annotated class take priority over annotated fields
         val chunkSize = (descriptor.annotations.find { it is CborInfinite } as? CborInfinite)?.chunkSize ?: chunkSize
+
+        encodeTag((descriptor.annotations.find { it is CborTag } as? CborTag)?.tag ?: tag)
+
         return if (chunkSize in 0 until collectionSize) { // number of elements exceed chunk size -> infinite
             beginStructure(descriptor)
         } else {
