@@ -10,7 +10,7 @@ From maven central :
 ```groovy
 dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-serialization-core:1.0.0-RC"
-    implementation "net.orandja.obor:obor:0.1.0"
+    implementation "net.orandja.obor:obor:0.2.0"
 }
 ```
 
