@@ -35,8 +35,11 @@ kotlin {
 
     // web
 
-    js {
-        browser()
+    js(IR) {
+        browser {
+            useCommonJs()
+            useEsModules()
+        }
         nodejs()
     }
 
@@ -78,6 +81,7 @@ kotlin {
     sourceSets {
         getByName("commonMain") {
             dependencies {
+                implementation(project(":submodule:patch"))
                 implementation(libs.kotlinx.serialization.core)
             }
         }

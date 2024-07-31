@@ -4,5 +4,5 @@ package net.orandja.obor.codec.decoder
 // TODO: Force index error info inside CborDecoderException
 /** A class holding all CborDecoderException */
 sealed class CborDecoderException(message: String) : IllegalStateException(message) {
-    data object Default : CborDecoderException("Error occurred while parsing")
+    class Default : CborDecoderException("Error occurred while parsing")
 }

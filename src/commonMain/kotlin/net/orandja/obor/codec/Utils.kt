@@ -3,27 +3,37 @@
 package net.orandja.obor.codec
 
 import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
-import kotlinx.serialization.descriptors.*
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.CompositeEncoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import net.orandja.obor.codec.decoder.CborDecoder
+import net.orandja.obor.codec.encoder.CborEncoder
+import kotlin.contracts.ExperimentalContracts
+import kotlin.contracts.InvocationKind
+import kotlin.contracts.contract
+import kotlin.reflect.KClass
 
-// Constants by encoders & decoders.
-// used for better understanding in code.
+// Constants for encoders & decoders.
+// Used to better understand the code.
 
-internal const val MAJOR_POSITIVE: UByte = 0u
-internal const val MAJOR_NEGATIVE: UByte = 32u
-internal const val MAJOR_BYTE: UByte = 64u
-internal const val MAJOR_TEXT: UByte = 96u
-internal const val MAJOR_ARRAY: UByte = 128u
-internal const val MAJOR_MAP: UByte = 160u
-internal const val MAJOR_TAG: UByte = 192u
-internal const val MAJOR_PRIMITIVE: UByte = 224u
+internal const val MAJOR_POSITIVE: UByte = 0x00u
+internal const val MAJOR_NEGATIVE: UByte = 0x20u
+internal const val MAJOR_BYTE: UByte = 0x40u
+internal const val MAJOR_TEXT: UByte = 0x60u
+internal const val MAJOR_ARRAY: UByte = 0x80u
+internal const val MAJOR_MAP: UByte = 0xA0u
+internal const val MAJOR_TAG: UByte = 0xC0u
+internal const val MAJOR_PRIMITIVE: UByte = 0xE0u
+internal const val MAJOR_MASK: UByte = MAJOR_PRIMITIVE
 
-internal const val SIZE_0: UByte = 0u
-internal const val SIZE_8: UByte = 24u
-internal const val SIZE_16: UByte = 25u
-internal const val SIZE_32: UByte = 26u
-internal const val SIZE_64: UByte = 27u
-internal const val SIZE_INFINITE: UByte = 31u
+internal const val SIZE_0: UByte = 0x00u
+internal const val SIZE_8: UByte = 0x18u
+internal const val SIZE_16: UByte = 0x19u
+internal const val SIZE_32: UByte = 0x1Au
+internal const val SIZE_64: UByte = 0x1Bu
+internal const val SIZE_INFINITE: UByte = 0x1Fu
 
 internal const val HEADER_POSITIVE_START: UByte = MAJOR_POSITIVE
 internal val HEADER_POSITIVE_8: UByte = MAJOR_POSITIVE or SIZE_8
@@ -71,11 +81,11 @@ internal val HEADER_TAG_16: UByte = MAJOR_TAG or SIZE_16
 internal val HEADER_TAG_32: UByte = MAJOR_TAG or SIZE_32
 internal val HEADER_TAG_64: UByte = MAJOR_TAG or SIZE_64
 
-internal val HEADER_FALSE: UByte = MAJOR_PRIMITIVE or 20u
-internal val HEADER_TRUE: UByte = MAJOR_PRIMITIVE or 21u
-internal val HEADER_NULL: UByte = MAJOR_PRIMITIVE or 22u
-internal val HEADER_UNDEFINED: UByte = MAJOR_PRIMITIVE or 23u
-internal val HEADER_BREAK: UByte = MAJOR_PRIMITIVE or 31u
+internal val HEADER_FALSE: UByte = MAJOR_PRIMITIVE or 0x14u
+internal val HEADER_TRUE: UByte = MAJOR_PRIMITIVE or 0x15u
+internal val HEADER_NULL: UByte = MAJOR_PRIMITIVE or 0x16u
+internal val HEADER_UNDEFINED: UByte = MAJOR_PRIMITIVE or 0x17u
+internal val HEADER_BREAK: UByte = MAJOR_PRIMITIVE or 0x1Fu
 
 internal val HEADER_FLOAT_16: UByte = MAJOR_PRIMITIVE or SIZE_16
 internal val HEADER_FLOAT_32: UByte = MAJOR_PRIMITIVE or SIZE_32
@@ -90,21 +100,49 @@ internal val SHORT_FF = (-1).toUShort()
 internal val INT_FF = (-1).toUInt()
 internal val LONG_FF = (-1).toULong()
 
+internal inline infix fun UByte.hasMajor(flags: UByte) = ((this and MAJOR_MASK) == flags)
 
-@OptIn(ExperimentalSerializationApi::class, InternalSerializationApi::class)
-internal object Descriptors {
+internal inline fun <reified T> List<*>.findTypeOf() = firstOrNull { it is T } as? T
 
-    // Used by decoder for Any deserialization
-    val any = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.any", SerialKind.CONTEXTUAL)
-    val array = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.array", StructureKind.LIST, any)
-    val map = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.map", StructureKind.MAP, any, any)
+@OptIn(ExperimentalSerializationApi::class)
+internal inline fun <reified T> SerialDescriptor.findAnnotation() =
+    annotations.firstOrNull { it is T } as? T
 
-    // Used by codec for infinite text serialisation
-    val string = PrimitiveSerialDescriptor("net.orandja.obor.codec.Descriptors.string", PrimitiveKind.STRING)
-    val infiniteText = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.any", StructureKind.LIST, string)
+internal inline fun name(vararg klass: KClass<*>) = klass.map { it.simpleName }.joinToString(".")
+internal inline fun unreachable(): Nothing = throw NotImplementedError("You shall not be here.")
 
-    val enum = buildSerialDescriptor("net.orandja.obor.codec.Descriptors.enum", SerialKind.ENUM)
+@OptIn(ExperimentalContracts::class)
+internal inline fun Decoder.assertCborDecoder(name: () -> String) {
+    contract {
+        callsInPlace(name, InvocationKind.AT_MOST_ONCE)
+        returns() implies (this@assertCborDecoder is CborDecoder)
+    }
+    if (this !is CborDecoder) error("${name()} can only be used with Obor's library. Expected: ${CborDecoder::class} found ${this::class}")
 }
 
-/** readeability sake */
-internal infix fun UByte.hasMajor(flags: UByte) = ((this and 0xE0u) == flags)
+@OptIn(ExperimentalContracts::class)
+internal inline fun Encoder.assertCborEncoder(name: () -> String) {
+    contract {
+        callsInPlace(name, InvocationKind.AT_MOST_ONCE)
+        returns() implies (this@assertCborEncoder is CborEncoder)
+    }
+    if (this !is CborEncoder) error("${name()} can only be used with Obor's library. Expected: ${CborEncoder::class} found ${this::class}")
+}
+
+@OptIn(ExperimentalContracts::class)
+internal inline fun CompositeDecoder.assertCborDecoder(name: () -> String) {
+    contract {
+        callsInPlace(name, InvocationKind.AT_MOST_ONCE)
+        returns() implies (this@assertCborDecoder is CborDecoder)
+    }
+    if (this !is CborDecoder) error("${name()} can only be used with Obor's library. Expected: ${CborDecoder::class} found ${this::class}")
+}
+
+@OptIn(ExperimentalContracts::class)
+internal inline fun CompositeEncoder.assertCborEncoder(name: () -> String) {
+    contract {
+        callsInPlace(name, InvocationKind.AT_MOST_ONCE)
+        returns() implies (this@assertCborEncoder is CborEncoder)
+    }
+    if (this !is CborEncoder) error("${name()} can only be used with Obor's library. Expected: ${CborEncoder::class} found ${this::class}")
+}

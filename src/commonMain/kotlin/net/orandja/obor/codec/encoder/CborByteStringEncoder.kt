@@ -1,54 +1,42 @@
 package net.orandja.obor.codec.encoder
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.modules.SerializersModule
-import net.orandja.obor.codec.HEADER_BYTE_INFINITE
-import net.orandja.obor.codec.HEADER_BYTE_START
-import net.orandja.obor.codec.MAJOR_BYTE
-import net.orandja.obor.codec.writer.CborWriter
-import net.orandja.obor.vector.UByteVector
+import net.orandja.obor.codec.*
+import net.orandja.obor.io.ByteVector
+import net.orandja.obor.io.CborWriter
 
-/**
- * Encoder for Byte String.
- *
- * It has 2 behavior :
- *  - Finite: Write the list with a fixed size and bypass header for each byte
- *  - Infinite: Buffer each chunk before pushing it through the [writer]
- *
- * @see CborWriter
- */
-@ExperimentalSerializationApi
-@ExperimentalUnsignedTypes
-@InternalSerializationApi
-internal class CborByteStringEncoder(writer: CborWriter, serializersModule: SerializersModule, chunkSize: Int) :
-    CborCollectionEncoder(writer, serializersModule, chunkSize) {
+internal class CborByteStringEncoder(
+    writer: CborWriter,
+    serializersModule: SerializersModule,
+    parent: Array<Long>,
+) : CborCollectionEncoder(writer, serializersModule, parent) {
     override val finiteToken: UByte = HEADER_BYTE_START
     override val infiniteToken: UByte = HEADER_BYTE_INFINITE
 
-    /** Buffer for infinite string. */
-    private val buffer by lazy { UByteVector(chunkSize) }
+    private val buffer by lazy { ByteVector(255) }
+
+    // Elements are all bytes with no annotation.
+    // We don't want them to override isFinite field by not having CborInfinite annotation
+    override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean = true
 
     override fun encodeByte(value: Byte) {
-        updateIndex()
-        if (isFinite) writer.write(value.toUByte())
-        else buffer.add(value.toUByte())
-    }
-
-    private fun updateIndex() {
-        if (isFinite) return
-        if (buffer.size == chunkSize) flush()
+        if (!(tracker.encParentIsInfinite || tracker.encClassIsInfinite)) writer.write(value.toUByte())
+        else {
+            buffer.add(value)
+            if (buffer.size == 255) flush()
+        }
     }
 
     private fun flush() {
-        if (isFinite && buffer.size == 0) return
+        if (!(tracker.encParentIsInfinite || tracker.encClassIsInfinite) || buffer.size == 0) return
         writer.writeMajor32(MAJOR_BYTE, buffer.size.toUInt())
         writer.write(buffer.nativeArray)
         buffer.clear()
     }
 
-    override fun endStructure(descriptor: SerialDescriptor) = flush().also { super.endStructure(descriptor) }
-
-    // TODO: Restrict for bytes only
+    override fun endStructure(descriptor: SerialDescriptor) {
+        flush()
+        super.endStructure(descriptor)
+    }
 }

@@ -3,3 +3,4 @@ plugins {
 }
 rootProject.name = "obor"
 
+include(":submodule:patch")

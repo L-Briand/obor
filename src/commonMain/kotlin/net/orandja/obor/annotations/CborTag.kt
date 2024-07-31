@@ -4,9 +4,11 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialInfo
 
 /**
- * Annotate a ByteArray, Array<Byte> or List<Byte> to serialize it with Major 2 (BYTE)
+ * Annotate a class or a property to add the [tag] before it.
+ *
+ * Set [require] to true to throw an exception if the tag is not present during deserialization.
  */
 @SerialInfo
-@ExperimentalSerializationApi
+@OptIn(ExperimentalSerializationApi::class)
 @Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
-annotation class CborTag(val tag: Long = -1, val require: Boolean = false)
+annotation class CborTag(val tag: Long, val require: Boolean = false)

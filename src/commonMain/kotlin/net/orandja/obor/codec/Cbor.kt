@@ -7,9 +7,9 @@ import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.codec.decoder.CborDecoder
 import net.orandja.obor.codec.encoder.CborEncoder
-import net.orandja.obor.codec.reader.CborUByteReader
-import net.orandja.obor.codec.writer.CborUByteWriter
-import net.orandja.obor.vector.UByteVector
+import net.orandja.obor.io.ByteVector
+import net.orandja.obor.io.CborByteReader
+import net.orandja.obor.io.CborByteWriter
 
 @OptIn(InternalSerializationApi::class, ExperimentalUnsignedTypes::class, ExperimentalSerializationApi::class)
 class Cbor(override val serializersModule: SerializersModule = EmptySerializersModule()) : BinaryFormat {
@@ -17,13 +17,13 @@ class Cbor(override val serializersModule: SerializersModule = EmptySerializersM
     companion object Default : BinaryFormat by Cbor()
 
     override fun <T> decodeFromByteArray(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T {
-        return deserializer.deserialize(CborDecoder(CborUByteReader(bytes.asUByteArray()), serializersModule))
+        return deserializer.deserialize(CborDecoder(CborByteReader(bytes), serializersModule))
     }
 
     override fun <T> encodeToByteArray(serializer: SerializationStrategy<T>, value: T): ByteArray {
-        val out = UByteVector()
-        serializer.serialize(CborEncoder(CborUByteWriter(out), serializersModule), value)
-        return out.nativeArray.asByteArray()
+        val out = ByteVector()
+        serializer.serialize(CborEncoder(CborByteWriter(out), serializersModule), value)
+        return out.nativeArray
     }
 //
 //    fun <T> decodeFromInputStream(deserializer: DeserializationStrategy<T>, input: InputStream): T {

@@ -1,26 +1,61 @@
 package net.orandja.obor
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.serializer
 import net.orandja.obor.codec.Cbor
+import net.orandja.obor.codec.HEADER_BREAK
+import net.orandja.obor.codec.SIZE_INFINITE
+import net.orandja.obor.io.ByteVector
+import net.orandja.obor.io.CborByteWriter
+import net.orandja.obor.io.CborWriter
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
-@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class, ExperimentalUnsignedTypes::class)
-inline fun <reified T> assertTransformation(expected: ByteArray, serializer: KSerializer<T>, data: T) {
-    assertEncode(expected, serializer, data)
-    assertDecode(expected, serializer, data)
+
+fun buildSize(major: UByte, amount: Int, value: UByte = 0u) = buildCbor { buildSize(major, amount, value) }
+fun CborWriter.buildSize(major: UByte, amount: Int, value: UByte = 0u) {
+    writeMajor32(major, (amount).toUInt())
+    repeat(amount) { write(value) }
 }
 
-@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class, ExperimentalUnsignedTypes::class)
-inline fun <reified T> assertEncode(expected: ByteArray, serializer: KSerializer<T>, data: T) {
-    val encoded = Cbor.encodeToByteArray(serializer, data)
-    assertContentEquals(expected, encoded)
+fun buildChunkedInfinite(major: UByte, amount: Int, chunk: Int, value: UByte = 0u) = buildCbor {
+    write((major or SIZE_INFINITE).toUByte())
+    repeat(amount / chunk) { buildSize(major, chunk, value) }
+    if (amount % chunk > 0) buildSize(major, amount % chunk, value)
+    write(HEADER_BREAK)
+}
+fun buildInfinite(major: UByte, amount: Int, onValue: CborWriter.() -> Unit) = buildCbor {
+    write((major or SIZE_INFINITE).toUByte())
+    repeat(amount) { onValue() }
+    write(HEADER_BREAK)
 }
 
-@OptIn(InternalSerializationApi::class, ExperimentalSerializationApi::class, ExperimentalUnsignedTypes::class)
-inline fun <reified T> assertDecode(expected: ByteArray, serializer: KSerializer<T>, data: T) {
-    val decoded = Cbor.decodeFromByteArray(serializer, expected )
-    assertEquals(data, decoded)
+@OptIn(ExperimentalStdlibApi::class)
+fun String.hex(): ByteArray = this.hexToByteArray(HexFormat.UpperCase)
+
+@OptIn(ExperimentalStdlibApi::class)
+fun ByteArray.hex(): String = toHexString(HexFormat.UpperCase)
+
+@OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
+fun String.uhex(): UByteArray = this.hexToByteArray(HexFormat.UpperCase).toUByteArray()
+
+@OptIn(ExperimentalStdlibApi::class, ExperimentalUnsignedTypes::class)
+fun UByteArray.uhex(): String = toHexString(HexFormat.UpperCase)
+
+inline infix fun <reified T> ByteArray.decodeCbor(serializer: KSerializer<T>) =
+    Cbor.decodeFromByteArray(serializer, this)
+
+inline infix fun <reified T> T.encodeCbor(serializer: KSerializer<T>) =
+    Cbor.encodeToByteArray(serializer, this)
+
+internal fun buildCbor(writer: CborWriter.() -> Unit): ByteArray {
+    val result = ByteVector()
+    CborByteWriter(result).apply(writer)
+    return result.nativeArray
+}
+
+
+inline fun <reified T> assertTransformation(expected: ByteArray, data: T, serializer: KSerializer<T> = serializer()) {
+    assertEquals(data, Cbor.decodeFromByteArray(serializer, expected))
+    assertContentEquals(expected, Cbor.encodeToByteArray(serializer, data))
 }
