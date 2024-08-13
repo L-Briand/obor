@@ -1,6 +1,8 @@
 package net.orandja.obor
 
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
+import net.orandja.obor.annotations.CborInfinite
 import net.orandja.obor.codec.MAJOR_TEXT
 import net.orandja.obor.serializer.CborArrayStringSerializer
 import net.orandja.obor.serializer.CborListStringSerializer
@@ -120,10 +122,8 @@ class MajorStringTextTest {
         assertEquals(MIN_SIZE16, CBOR_MIN_SIZE16_INFINITE_x10 decodeCbor serializer())
     }
 
-
     @Test
-    fun classStringInfinite() {
-
+    fun inlineInfiniteString() {
         assertEquals(Infinite(EMPTY), CBOR_EMPTY_INFINITE decodeCbor serializer())
         assertContentEquals(CBOR_EMPTY_INFINITE, Infinite(EMPTY) encodeCbor serializer())
 
@@ -141,5 +141,31 @@ class MajorStringTextTest {
 
         assertEquals(Infinite(MIN_SIZE16), CBOR_MIN_SIZE16_INFINITE_x255 decodeCbor serializer())
         assertContentEquals(CBOR_MIN_SIZE16_INFINITE_x255, Infinite(MIN_SIZE16) encodeCbor serializer())
+    }
+
+
+    @Serializable
+    data class InfiniteString(@CborInfinite val string: String)
+    private fun cborInClass(cbor: ByteArray) = "A166737472696E67".hex() + cbor
+
+    @Test
+    fun infiniteString() {
+        assertEquals(InfiniteString(EMPTY), cborInClass(CBOR_EMPTY_INFINITE) decodeCbor serializer())
+        assertContentEquals(cborInClass(CBOR_EMPTY_INFINITE), InfiniteString(EMPTY) encodeCbor serializer())
+
+        assertEquals(InfiniteString(ONE), cborInClass(CBOR_ONE_INFINITE_x255) decodeCbor serializer())
+        assertContentEquals(cborInClass(CBOR_ONE_INFINITE_x255), InfiniteString(ONE) encodeCbor serializer())
+
+        assertEquals(InfiniteString(MAX_SIZE0), cborInClass(CBOR_MAX_SIZE0_INFINITE_x255) decodeCbor serializer())
+        assertContentEquals(cborInClass(CBOR_MAX_SIZE0_INFINITE_x255), InfiniteString(MAX_SIZE0) encodeCbor serializer())
+
+        assertEquals(InfiniteString(MIN_SIZE8), cborInClass(CBOR_MIN_SIZE8_INFINITE_x255) decodeCbor serializer())
+        assertContentEquals(cborInClass(CBOR_MIN_SIZE8_INFINITE_x255), InfiniteString(MIN_SIZE8) encodeCbor serializer())
+
+        assertEquals(InfiniteString(MAX_SIZE8), cborInClass(CBOR_MAX_SIZE8_INFINITE_x255) decodeCbor serializer())
+        assertContentEquals(cborInClass(CBOR_MAX_SIZE8_INFINITE_x255), InfiniteString(MAX_SIZE8) encodeCbor serializer())
+
+        assertEquals(InfiniteString(MIN_SIZE16), cborInClass(CBOR_MIN_SIZE16_INFINITE_x255) decodeCbor serializer())
+        assertContentEquals(cborInClass(CBOR_MIN_SIZE16_INFINITE_x255), InfiniteString(MIN_SIZE16) encodeCbor serializer())
     }
 }

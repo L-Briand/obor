@@ -9,7 +9,7 @@ class CborWriterTest {
         // Write raw bytes
         assertContentEquals("61".hex(), buildCbor { write(0x61) })
         assertContentEquals("FF".hex(), buildCbor { write(0xFFu) })
-        assertContentEquals("616263".hex(), buildCbor { write(byteArrayOf(0x61, 0x62, 0x63)) })
+        assertContentEquals("616263".hex(), buildCbor { write(byteArrayOf(0x61, 0x62, 0x63), 0, 3) })
         assertContentEquals("62".hex(), buildCbor { write(byteArrayOf(0x61, 0x62, 0x63), 1, 1) })
 
         // @formatter:off

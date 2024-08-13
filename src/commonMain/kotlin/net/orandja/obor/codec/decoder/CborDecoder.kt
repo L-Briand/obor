@@ -6,6 +6,7 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.annotations.CborTag
@@ -24,7 +25,7 @@ import kotlin.experimental.xor
 internal open class CborDecoder(
     protected val reader: CborReader,
     override val serializersModule: SerializersModule,
-    protected val tracker: Array<Long> = newDecoderTracker()
+    protected var tracker: Array<Long> = newDecoderTracker()
 ) : AbstractDecoder() {
 
 
@@ -78,6 +79,14 @@ internal open class CborDecoder(
         }
     }
 
+    override fun decodeInline(descriptor: SerialDescriptor): Decoder {
+        readTag(descriptor.annotations)
+        decodeTags()
+        tracker = newDecoderTracker(tracker)
+        readTag(descriptor.getElementAnnotations(0))
+        return super.decodeInline(descriptor)
+    }
+
     /** By default decoder do not have element. */
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int = CompositeDecoder.DECODE_DONE
 
@@ -88,7 +97,7 @@ internal open class CborDecoder(
         if (cborTag != null) {
             tracker.decClassHasTag = true
             tracker.decClassTag = cborTag.tag
-            tracker.decClassRequireTag = cborTag.require
+            tracker.decClassRequireTag = cborTag.required
         } else {
             tracker.decClassHasTag = false
         }

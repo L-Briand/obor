@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
 import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.decoder.CborDecoderException
+import kotlin.jvm.JvmInline
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -91,5 +92,45 @@ class CborTagTest {
         assertFailsWith<CborDecoderException> {
             assertEquals(intList, cborIntNoTag decodeCbor serializer())
         }
+    }
+
+    @JvmInline
+    @Serializable
+    value class InlineFieldTag(@CborTag(0) val items: List<Int>)
+
+    @Test
+    fun inlineFieldTag() {
+        val intList = InlineFieldTag(listOf(0, 0))
+        val cborIntList = "C0820000".hex()
+
+        assertContentEquals(cborIntList, intList encodeCbor serializer())
+        assertEquals(intList, cborIntList decodeCbor serializer())
+    }
+
+    @JvmInline
+    @Serializable
+    @CborTag(0)
+    value class InlineClassTag(val items: List<Int>)
+
+    @Test
+    fun inlineClassTag() {
+        val intList = InlineClassTag(listOf(0, 0))
+        val cborIntList = "C0820000".hex()
+        assertContentEquals(cborIntList, intList encodeCbor serializer())
+        assertEquals(intList, cborIntList decodeCbor serializer())
+    }
+
+    @JvmInline
+    @Serializable
+    @CborTag(0)
+    value class InlineClassAndFieldTag(@CborTag(0) val items: List<Int>)
+
+    @Test
+    fun inlineClassAndFieldTag() {
+        val intList = InlineClassAndFieldTag(listOf(0, 0))
+        val cborIntList = "C0C0820000".hex()
+        println((intList encodeCbor serializer()).hex())
+        assertContentEquals(cborIntList, intList encodeCbor serializer())
+        assertEquals(intList, cborIntList decodeCbor serializer())
     }
 }

@@ -3,7 +3,6 @@ package net.orandja.obor.io
 interface CborWriter {
     fun write(byte: Byte)
     fun write(byte: UByte)
-    fun write(bytes: ByteArray)
     fun write(bytes: ByteArray, offset: Int, count: Int)
 
     // writeMajor -> fit into a smaller header if there is room for it.

@@ -35,7 +35,8 @@ internal abstract class CborCollectionDecoder(
 
     override fun startStructure(descriptor: SerialDescriptor): CompositeDecoder {
         super.startStructure(descriptor)
-        if (!(reader.peek() hasMajor major)) throw CborDecoderException.Default()
+        if (!(reader.peek() hasMajor major))
+            throw CborDecoderException.Default()
 
         isStructureInfinite = (reader.peek() and SIZE_INFINITE) == SIZE_INFINITE
         if (!isStructureInfinite) size = decodeCollectionSize(descriptor)
@@ -49,7 +50,7 @@ internal abstract class CborCollectionDecoder(
         indexCounter == size -> CompositeDecoder.DECODE_DONE
         else -> {
             val index = indexCounter++
-            readTag(descriptor.getElementAnnotations(index))
+            if(index < descriptor.elementsCount) readTag(descriptor.getElementAnnotations(index))
             index
         }
     }

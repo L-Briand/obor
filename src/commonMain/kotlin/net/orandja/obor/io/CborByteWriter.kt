@@ -10,7 +10,6 @@ class CborByteWriter(private val delegate: ByteVector) : CborWriter {
     private val buffer = ByteArray(9) { 0 }
     override fun write(byte: Byte) = delegate.add(byte)
     override fun write(byte: UByte) = delegate.add(byte.toByte())
-    override fun write(bytes: ByteArray) = delegate.add(bytes, 0, bytes.size)
     override fun write(bytes: ByteArray, offset: Int, count: Int) = delegate.add(bytes, offset, count)
 
     override fun writeMajor8(major: UByte, value: UByte) {

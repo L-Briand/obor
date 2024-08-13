@@ -334,8 +334,6 @@ class MajorStringByteTest {
 
     @Test
     fun classBytesList2() {
-        println(cborInClass(CBOR_EMPTY_INFINITE).hex())
-        println((BytesList2(EMPTY.toList()) encodeCbor serializer()).hex())
         assertEquals(BytesList2(EMPTY.toList()), cborInClass(CBOR_EMPTY_INFINITE) decodeCbor serializer())
         assertContentEquals(cborInClass(CBOR_EMPTY_INFINITE), BytesList2(EMPTY.toList()) encodeCbor serializer())
 

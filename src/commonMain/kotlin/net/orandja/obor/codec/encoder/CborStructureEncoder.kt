@@ -32,15 +32,7 @@ internal class CborStructureEncoder(
         encodeStructureName(descriptor.getElementName(index))
         this.tracker = tracker
 
-        val annotations = descriptor.getElementAnnotations(index)
-        if (annotations.findTypeOf<CborInfinite>() != null) this.tracker.encFieldIsInfinite = true
-        if (annotations.findTypeOf<CborRawBytes>() != null) this.tracker.encFieldIsRawBytes = true
-        val cTag = annotations.findTypeOf<CborTag>()
-        if (cTag != null) {
-            this.tracker.encFieldHasTag = true
-            this.tracker.encFieldTag = cTag.tag
-        }
-
+        setFieldTracker(descriptor.getElementAnnotations(index))
         encodeTag()
         return true
     }

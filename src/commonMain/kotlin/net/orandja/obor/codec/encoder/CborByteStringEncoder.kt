@@ -31,7 +31,7 @@ internal class CborByteStringEncoder(
     private fun flush() {
         if (!(tracker.encParentIsInfinite || tracker.encClassIsInfinite) || buffer.size == 0) return
         writer.writeMajor32(MAJOR_BYTE, buffer.size.toUInt())
-        writer.write(buffer.nativeArray)
+        writer.write(buffer.nativeArray, 0, buffer.size)
         buffer.clear()
     }
 

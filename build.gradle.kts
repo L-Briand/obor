@@ -81,7 +81,6 @@ kotlin {
     sourceSets {
         getByName("commonMain") {
             dependencies {
-                implementation(project(":submodule:patch"))
                 implementation(libs.kotlinx.serialization.core)
             }
         }

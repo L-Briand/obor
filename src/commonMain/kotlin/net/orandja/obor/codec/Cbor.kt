@@ -2,36 +2,42 @@
 
 package net.orandja.obor.codec
 
-import kotlinx.serialization.*
+import kotlinx.serialization.BinaryFormat
+import kotlinx.serialization.DeserializationStrategy
+import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.codec.decoder.CborDecoder
 import net.orandja.obor.codec.encoder.CborEncoder
-import net.orandja.obor.io.ByteVector
-import net.orandja.obor.io.CborByteReader
-import net.orandja.obor.io.CborByteWriter
+import net.orandja.obor.io.*
 
-@OptIn(InternalSerializationApi::class, ExperimentalUnsignedTypes::class, ExperimentalSerializationApi::class)
-class Cbor(override val serializersModule: SerializersModule = EmptySerializersModule()) : BinaryFormat {
+open class Cbor private constructor(override val serializersModule: SerializersModule = EmptySerializersModule()) :
+    BinaryFormat {
 
-    companion object Default : BinaryFormat by Cbor()
-
-    override fun <T> decodeFromByteArray(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T {
-        return deserializer.deserialize(CborDecoder(CborByteReader(bytes), serializersModule))
+    companion object : Cbor() {
+        operator fun invoke(block: Builder.() -> Unit) = Builder().apply(block).build()
     }
+
+    class Builder {
+        var serializersModule: SerializersModule = EmptySerializersModule()
+        internal fun build() = Cbor(serializersModule)
+    }
+
+
+    fun <T> decodeFromReader(deserializer: DeserializationStrategy<T>, reader: CborReader): T {
+        return deserializer.deserialize(CborDecoder(reader, serializersModule))
+    }
+
+    fun <T> encodeToWriter(serializer: SerializationStrategy<T>, value: T, writer: CborWriter) {
+        serializer.serialize(CborEncoder(writer, serializersModule), value)
+    }
+
+    override fun <T> decodeFromByteArray(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T =
+        decodeFromReader(deserializer, CborByteReader(bytes))
 
     override fun <T> encodeToByteArray(serializer: SerializationStrategy<T>, value: T): ByteArray {
         val out = ByteVector()
-        serializer.serialize(CborEncoder(CborByteWriter(out), serializersModule), value)
+        encodeToWriter(serializer, value, CborByteWriter(out))
         return out.nativeArray
     }
-//
-//    fun <T> decodeFromInputStream(deserializer: DeserializationStrategy<T>, input: InputStream): T {
-//        return deserializer.deserialize(CborDecoder(CborInputStreamReader(input), serializersModule))
-//    }
-//
-//    fun <T> encodeToOutputStream(serializer: SerializationStrategy<T>, value: T, output: OutputStream) {
-//        serializer.serialize(CborEncoder(CborOutputStreamWriter(output), serializersModule), value)
-//    }
 }
-
