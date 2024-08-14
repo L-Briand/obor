@@ -1,8 +1,10 @@
 package net.orandja.obor
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToHexString
 import kotlinx.serialization.serializer
 import net.orandja.obor.annotations.CborTag
+import net.orandja.obor.codec.Cbor
 import net.orandja.obor.codec.decoder.CborDecoderException
 import kotlin.jvm.JvmInline
 import kotlin.test.Test
@@ -86,7 +88,6 @@ class CborTagTest {
         val intList = TagOnFieldRequired(listOf(0, 0))
         val cborIntList = "A1656974656D73C0820000".hex()
         val cborIntNoTag = "A1656974656D73820000".hex()
-
         assertContentEquals(cborIntList, intList encodeCbor serializer())
         assertEquals(intList, cborIntList decodeCbor serializer())
         assertFailsWith<CborDecoderException> {
@@ -129,7 +130,6 @@ class CborTagTest {
     fun inlineClassAndFieldTag() {
         val intList = InlineClassAndFieldTag(listOf(0, 0))
         val cborIntList = "C0C0820000".hex()
-        println((intList encodeCbor serializer()).hex())
         assertContentEquals(cborIntList, intList encodeCbor serializer())
         assertEquals(intList, cborIntList decodeCbor serializer())
     }

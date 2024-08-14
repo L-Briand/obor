@@ -42,15 +42,8 @@ class FloatingPointTests {
 
     @Test
     fun ordinaryFloatingPoints() {
-        assertContentEquals("FBBE6FFFFFFFFFFFFF".hex(), -5.960464477539062e-8 encodeCbor serializer())
-//        assertEquals(-5.960464477539062e-8, "FBBE6FFFFFFFFFFFFF".hex() decodeCbor  serializer<Double>())
-
-//        assertContentEquals("F98001".hex(), -5.9604644775390625e-8 encodeCbor serializer())
-//        assertEquals(-5.9604644775390625e-8, "F98001".hex() decodeCbor  serializer<Double>())
-
-//        assertContentEquals("FBBE70000000000001".hex(), -5.960464477539064e-8 encodeCbor serializer())
-//        assertEquals(-5.960464477539064e-8, "FBBE70000000000001".hex() decodeCbor  serializer<Double>())
         // draft-rundgren-deterministic-cbor-17 -> Section 2.3.3. "Ordinary" Floating Point Numbers
+        assertTransformation("FBBE6FFFFFFFFFFFFF".hex(), -5.960464477539062e-8)
         assertTransformation("F98001".hex(), -5.9604644775390625e-8)
         assertTransformation("FBBE70000000000001".hex(), -5.960464477539064e-8)
         assertTransformation("FAB3800001".hex(), -5.960465188081798e-8)

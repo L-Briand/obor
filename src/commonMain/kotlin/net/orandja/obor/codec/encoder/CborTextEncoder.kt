@@ -10,8 +10,8 @@ internal class CborTextEncoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionEncoder(writer, serializersModule, parent) {
-    override val finiteToken: UByte = HEADER_TEXT_START
-    override val infiniteToken: UByte = HEADER_TEXT_INFINITE
+    override val finiteToken: Byte = HEADER_TEXT_START
+    override val infiniteToken: Byte = HEADER_TEXT_INFINITE
 
     // TODO: Restrict for strings only
 }

@@ -13,6 +13,8 @@ import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.*
 import net.orandja.obor.io.ByteVector
 import net.orandja.obor.io.CborReader
+import kotlin.experimental.and
+import kotlin.experimental.or
 import kotlin.experimental.xor
 
 /**
@@ -40,8 +42,8 @@ internal open class CborDecoder(
      * Otherwise it implies that something will be created in memory with more than [Int.MAX_VALUE] bytes.
      */
     override fun decodeCollectionSize(descriptor: SerialDescriptor): Int =
-        when (val it = reader.peekConsume() and 0x1Fu) {
-            in (SIZE_0 until SIZE_8) -> (it and 0x1Fu).toInt()
+        when (val it = reader.peekConsume() and SIZE_MASK) {
+            in (SIZE_0 until SIZE_8) -> (it and SIZE_MASK).toInt()
             SIZE_8 -> reader.nextUByte().toInt()
             SIZE_16 -> reader.nextUShort().toInt()
             SIZE_32 -> reader.nextUInt().toInt()
@@ -84,6 +86,7 @@ internal open class CborDecoder(
         decodeTags()
         tracker = newDecoderTracker(tracker)
         readTag(descriptor.getElementAnnotations(0))
+        decodeTags()
         return super.decodeInline(descriptor)
     }
 
@@ -92,14 +95,15 @@ internal open class CborDecoder(
 
     // region TAG
 
-    protected fun readTag(annotation: List<Annotation>) {
-        val cborTag = annotation.findTypeOf<CborTag>()
-        if (cborTag != null) {
-            tracker.decClassHasTag = true
-            tracker.decClassTag = cborTag.tag
-            tracker.decClassRequireTag = cborTag.required
-        } else {
-            tracker.decClassHasTag = false
+    protected fun readTag(annotations: List<Annotation>) {
+        tracker.decClassHasTag = false
+        for (annotation in annotations) {
+            if (annotation is CborTag) {
+                tracker.decClassHasTag = true
+                tracker.decClassTag = annotation.tag
+                tracker.decClassRequireTag = annotation.required
+                return
+            }
         }
     }
 
@@ -116,8 +120,8 @@ internal open class CborDecoder(
         val noTag = !(reader.peek() hasMajor MAJOR_TAG)
         if (noTag && isRequired) throw CborDecoderException.Default()
         if (noTag) return false
-        val readTag = when (val peek = reader.peekConsume()) {
-            in (HEADER_TAG_START until HEADER_TAG_8) -> (peek and 0x1Fu).toLong()
+        val readTag: Long = when (val peek = reader.peekConsume()) {
+            in (HEADER_TAG_START until HEADER_TAG_8) -> (peek and 0x1F).toLong()
             HEADER_TAG_8 -> reader.nextUByte().toLong()
             HEADER_TAG_16 -> reader.nextUShort().toLong()
             HEADER_TAG_32 -> reader.nextUInt().toLong()
@@ -155,7 +159,7 @@ internal open class CborDecoder(
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun getSize(peek: UByte): ULong {
+    private inline fun getSize(peek: Byte): ULong {
         reader.consume()
         return when {
             (peek and SIZE_8) == SIZE_8 -> reader.nextUByte().toULong()
@@ -167,7 +171,7 @@ internal open class CborDecoder(
         }
     }
 
-    private inline fun skipRepeat(peek: UByte, onItem: () -> Unit) {
+    private inline fun skipRepeat(peek: Byte, onItem: () -> Unit) {
         val count = getSize(peek)
         var index = 0.toULong()
         while (index < count) {
@@ -184,13 +188,13 @@ internal open class CborDecoder(
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun skipSimpleElement(peek: UByte) {
+    private inline fun skipSimpleElement(peek: Byte) {
         reader.consume()
         when {
-            (peek and SIZE_INFINITE) == SIZE_8 -> reader.skip(1)
-            (peek and SIZE_INFINITE) == SIZE_16 -> reader.skip(2)
-            (peek and SIZE_INFINITE) == SIZE_32 -> reader.skip(4)
-            (peek and SIZE_INFINITE) == SIZE_64 -> reader.skip(8)
+            (peek and SIZE_MASK) == SIZE_8 -> reader.skip(1)
+            (peek and SIZE_MASK) == SIZE_16 -> reader.skip(2)
+            (peek and SIZE_MASK) == SIZE_32 -> reader.skip(4)
+            (peek and SIZE_MASK) == SIZE_64 -> reader.skip(8)
         }
     }
 
@@ -199,18 +203,15 @@ internal open class CborDecoder(
     // region PRIMITIVE DECODING
 
     override fun decodeNotNullMark(): Boolean {
-        decodeTags()
         return reader.peek() != HEADER_NULL
     }
 
     override fun decodeNull(): Nothing? {
-        decodeTags()
         return if (reader.peekConsume() == HEADER_NULL) null
         else throw CborDecoderException.Default()
     }
 
     override fun decodeBoolean(): Boolean {
-        decodeTags()
         return when (reader.peekConsume()) {
             HEADER_FALSE -> false
             HEADER_TRUE -> true
@@ -219,7 +220,6 @@ internal open class CborDecoder(
     }
 
     override fun decodeFloat(): Float {
-        decodeTags()
         return when (reader.peekConsume()) {
             HEADER_FLOAT_16 -> float16BitsToFloat32(reader.nextUShort().toInt())
             HEADER_FLOAT_32 -> Float.fromBits(reader.nextUInt().toInt())
@@ -228,7 +228,6 @@ internal open class CborDecoder(
     }
 
     override fun decodeDouble(): Double {
-        decodeTags()
         return when (reader.peekConsume()) {
             HEADER_FLOAT_16 -> float16BitsToFloat32(reader.nextUShort().toInt()).toDouble()
             HEADER_FLOAT_32 -> Float.fromBits(reader.nextUInt().toInt()).toDouble()
@@ -238,10 +237,9 @@ internal open class CborDecoder(
     }
 
     override fun decodeByte(): Byte {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toByte()
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toByte().xor(-1)
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK)
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).xor(-1)
             HEADER_POSITIVE_8 -> reader.nextUByte().toByte()
                 .takeIf { it >= 0 } ?: throw CborDecoderException.Default()
 
@@ -253,10 +251,9 @@ internal open class CborDecoder(
     }
 
     override fun decodeShort(): Short {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toShort()
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toShort().xor(-1)
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toShort()
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toShort().xor(-1)
             HEADER_POSITIVE_8 -> reader.nextUByte().toShort()
             HEADER_NEGATIVE_8 -> reader.nextUByte().toShort().xor(-1)
             HEADER_POSITIVE_16 -> reader.nextUShort().toShort()
@@ -270,10 +267,9 @@ internal open class CborDecoder(
     }
 
     override fun decodeInt(): Int {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toInt()
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toInt().xor(-1)
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toInt()
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toInt().xor(-1)
             HEADER_POSITIVE_8 -> reader.nextUByte().toInt()
             HEADER_NEGATIVE_8 -> reader.nextUByte().toInt().xor(-1)
             HEADER_POSITIVE_16 -> reader.nextUShort().toInt()
@@ -289,10 +285,9 @@ internal open class CborDecoder(
     }
 
     override fun decodeLong(): Long {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toLong()
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toLong().xor(-1L)
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toLong()
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toLong().xor(-1L)
             HEADER_POSITIVE_8 -> reader.nextUByte().toLong()
             HEADER_NEGATIVE_8 -> reader.nextUByte().toLong().xor(-1L)
             HEADER_POSITIVE_16 -> reader.nextUShort().toLong()
@@ -310,18 +305,16 @@ internal open class CborDecoder(
     }
 
     override fun decodeChar(): Char {
-        decodeTags()
         val result = decodeString()
         return if (result.length == 1) result[0] else throw CborDecoderException.Default()
     }
 
     override fun decodeString(): String {
-        decodeTags()
 
         if (reader.peek() == HEADER_TEXT_INFINITE) return decodeStringInfinite()
 
         val size: Int = when (val peek = reader.peekConsume()) {
-            in (HEADER_TEXT_START until HEADER_TEXT_8) -> (peek and 0x1Fu).toInt()
+            in (HEADER_TEXT_START until HEADER_TEXT_8) -> (peek and SIZE_MASK).toInt()
             HEADER_TEXT_8 -> reader.nextUByte().toInt()
             HEADER_TEXT_16 -> reader.nextUShort().toInt()
             HEADER_TEXT_32 -> reader.nextUInt().toInt()
@@ -355,12 +348,11 @@ internal open class CborDecoder(
      * This function exists to decode bytearrays (and infinite bytes string) more efficiently like a string.
      */
     fun decodeBytes(): ByteArray {
-        decodeTags()
 
         if (reader.peek() == HEADER_BYTE_INFINITE) return decodeBytesInfinite()
 
         val size: Int = when (val peek = reader.peekConsume()) {
-            in (HEADER_BYTE_START until HEADER_BYTE_8) -> (peek and 0x1Fu).toInt()
+            in (HEADER_BYTE_START until HEADER_BYTE_8) -> (peek and SIZE_MASK).toInt()
             HEADER_BYTE_8 -> reader.nextUByte().toInt()
             HEADER_BYTE_16 -> reader.nextUShort().toInt()
             HEADER_BYTE_32 -> reader.nextUInt().toInt()
@@ -391,25 +383,28 @@ internal open class CborDecoder(
 
     // TODO: Add enum decoding by index.
     override fun decodeEnum(enumDescriptor: SerialDescriptor): Int {
-        decodeTags()
         return enumDescriptor.getElementIndex(decodeString())
     }
 
     // POSITIVE UNSIGNED
 
+    // Quick note :
+    // println(0xFFFF_FFFF) // 4294967295
+    // println(0xFFFF_FFFF.toInt()) // -1
+    // println(0xFFFF_FFFF.toInt().toLong()) // -1
+    // We first need to encode in the correct format then transform it in unsigned type
+
     fun decodeUByte(): UByte {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> it and 0x1Fu
-            HEADER_POSITIVE_8 -> reader.nextUByte()
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toUByte()
+            HEADER_POSITIVE_8 -> reader.nextUByte().toByte().toUByte()
             else -> throw CborDecoderException.Default()
         }
     }
 
     fun decodeUShort(): UShort {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toUShort()
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toUShort()
             HEADER_POSITIVE_8 -> reader.nextUByte().toUShort()
             HEADER_POSITIVE_16 -> reader.nextUShort()
             else -> throw CborDecoderException.Default()
@@ -417,9 +412,8 @@ internal open class CborDecoder(
     }
 
     fun decodeUInt(): UInt {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toUInt()
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toUInt()
             HEADER_POSITIVE_8 -> reader.nextUByte().toUInt()
             HEADER_POSITIVE_16 -> reader.nextUShort().toUInt()
             HEADER_POSITIVE_32 -> reader.nextUInt()
@@ -428,9 +422,8 @@ internal open class CborDecoder(
     }
 
     fun decodeULong(): ULong {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and 0x1Fu).toULong()
+            in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toULong()
             HEADER_POSITIVE_8 -> reader.nextUByte().toULong()
             HEADER_POSITIVE_16 -> reader.nextUShort().toULong()
             HEADER_POSITIVE_32 -> reader.nextUInt().toULong()
@@ -443,18 +436,16 @@ internal open class CborDecoder(
     // NEGATIVE UNSIGNED
 
     fun decodeUByteNeg(): UByte {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> it and 0x1Fu
-            HEADER_NEGATIVE_8 -> reader.nextUByte()
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUByte()
+            HEADER_NEGATIVE_8 -> reader.nextUByte().toByte().toUByte()
             else -> throw CborDecoderException.Default()
         }
     }
 
     fun decodeUShortNeg(): UShort {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toUShort()
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUShort()
             HEADER_NEGATIVE_8 -> reader.nextUByte().toUShort()
             HEADER_NEGATIVE_16 -> reader.nextUShort()
             else -> throw CborDecoderException.Default()
@@ -462,9 +453,8 @@ internal open class CborDecoder(
     }
 
     fun decodeUIntNeg(): UInt {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toUInt()
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUInt()
             HEADER_NEGATIVE_8 -> reader.nextUByte().toUInt()
             HEADER_NEGATIVE_16 -> reader.nextUShort().toUInt()
             HEADER_NEGATIVE_32 -> reader.nextUInt()
@@ -473,9 +463,8 @@ internal open class CborDecoder(
     }
 
     fun decodeULongNeg(): ULong {
-        decodeTags()
         return when (val it = reader.peekConsume()) {
-            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and 0x1Fu).toULong()
+            in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toULong()
             HEADER_NEGATIVE_8 -> reader.nextUByte().toULong()
             HEADER_NEGATIVE_16 -> reader.nextUShort().toULong()
             HEADER_NEGATIVE_32 -> reader.nextUInt().toULong()
@@ -484,5 +473,6 @@ internal open class CborDecoder(
             else -> throw CborDecoderException.Default()
         }
     }
+
     // endregion
 }

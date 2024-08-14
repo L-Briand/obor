@@ -10,8 +10,8 @@ internal class CborBytesEncoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionEncoder(writer, serializersModule, parent) {
-    override val finiteToken: UByte = HEADER_BYTE_START
-    override val infiniteToken: UByte = HEADER_BYTE_INFINITE
+    override val finiteToken: Byte = HEADER_BYTE_START
+    override val infiniteToken: Byte = HEADER_BYTE_INFINITE
 
     // TODO: Restrict for bytes only
 }

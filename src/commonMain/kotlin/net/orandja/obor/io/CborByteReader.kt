@@ -15,15 +15,21 @@ internal class CborByteReader(private val array: ByteArray) : CborReader {
         return read
     }
 
-    private var peek: UByte? = null
-    override fun peek(): UByte {
+    private var peek: Byte? = null
+    override fun peek(): Byte {
         if (peek != null) return peek!!
-        peek = read().toUByte()
+        peek = read()
         return peek!!
     }
 
     override fun consume() {
         peek = null
+    }
+
+    override fun peekConsume(): Byte {
+        val result = peek()
+        consume()
+        return result
     }
 
     override fun nextUByte(): UByte = read().toUByte()

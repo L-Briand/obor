@@ -15,6 +15,7 @@ import net.orandja.obor.annotations.CborSkip
 import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.*
 import net.orandja.obor.io.CborWriter
+import kotlin.experimental.xor
 
 /**
  * Default Cbor decoder.
@@ -31,36 +32,45 @@ internal open class CborEncoder(
 
     protected fun encodeTag() {
         if (tracker.encParentHasTag) {
-            writer.writeMajor64(MAJOR_TAG, tracker.encParentTag.toULong())
+            writer.writeMajor64(MAJOR_TAG, tracker.encParentTag)
             tracker.encParentHasTag = false
         }
         if (tracker.encFieldHasTag) {
-            writer.writeMajor64(MAJOR_TAG, tracker.encFieldTag.toULong())
+            writer.writeMajor64(MAJOR_TAG, tracker.encFieldTag)
             tracker.encFieldHasTag = false
         }
         if (tracker.encClassHasTag) {
-            writer.writeMajor64(MAJOR_TAG, tracker.encClassTag.toULong())
+            writer.writeMajor64(MAJOR_TAG, tracker.encClassTag)
             tracker.encClassHasTag = false
         }
     }
 
     protected fun setClassTracker(annotations: List<Annotation>) {
-        if (annotations.findTypeOf<CborInfinite>() != null) tracker.encClassIsInfinite = true
-        if (annotations.findTypeOf<CborRawBytes>() != null) tracker.encClassIsRawBytes = true
-        val cTag = annotations.findTypeOf<CborTag>()
-        if (cTag != null) {
-            tracker.encClassHasTag = true
-            tracker.encClassTag = cTag.tag
+        for (annotation in annotations) {
+            when (annotation) {
+                is CborTag -> {
+                    tracker.encClassHasTag = true
+                    tracker.encClassTag = annotation.tag
+                }
+
+                is CborInfinite -> tracker.encClassIsInfinite = true
+                is CborRawBytes -> tracker.encClassIsRawBytes = true
+            }
         }
     }
 
     protected fun setFieldTracker(annotations: List<Annotation>) {
-        if (annotations.findTypeOf<CborInfinite>() != null) tracker.encFieldIsInfinite = true
-        if (annotations.findTypeOf<CborRawBytes>() != null) tracker.encFieldIsRawBytes = true
-        val cTag = annotations.findTypeOf<CborTag>()
-        if (cTag != null) {
-            tracker.encFieldHasTag = true
-            tracker.encFieldTag = cTag.tag
+        if (tracker.encFieldSkipTag) return
+        for (annotation in annotations) {
+            when (annotation) {
+                is CborTag -> {
+                    tracker.encFieldHasTag = true
+                    tracker.encFieldTag = annotation.tag
+                }
+
+                is CborInfinite -> tracker.encFieldIsInfinite = true
+                is CborRawBytes -> tracker.encFieldIsRawBytes = true
+            }
         }
     }
 
@@ -72,33 +82,32 @@ internal open class CborEncoder(
 
     open fun startStructure(descriptor: SerialDescriptor): CompositeEncoder {
         setClassTracker(descriptor.annotations)
-        tracker.encClassIsInfinite = true // a structure without size is always infinite
+        tracker.encClassIsInfinite = true
         encodeTag()
         return this
     }
 
     override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
-        if (index < descriptor.elementsCount &&
-            descriptor.getElementAnnotations(index).findTypeOf<CborSkip>() != null
-        ) return false
+        if (index < descriptor.elementsCount) {
+            for (annotation in descriptor.getElementAnnotations(index)) if (annotation is CborSkip) return false
+        }
+        setFieldTracker(descriptor.getElementAnnotations(index))
         encodeTag()
         return super.encodeElement(descriptor, index)
     }
 
     override fun encodeInline(descriptor: SerialDescriptor): Encoder {
-        setClassTracker(descriptor.annotations)
-        encodeTag()
         setFieldTracker(descriptor.getElementAnnotations(0))
         tracker = newEncoderTracker(tracker)
+        setClassTracker(descriptor.annotations)
+        encodeTag()
         return super.encodeInline(descriptor)
     }
 
-    @OptIn(ExperimentalStdlibApi::class)
     override fun beginCollection(descriptor: SerialDescriptor, collectionSize: Int): CompositeEncoder {
         if (tracker.encParentIsInfinite || tracker.encFieldIsInfinite || tracker.encClassIsInfinite)
             return beginStructure(descriptor)
 
-        encodeTag()
         when (descriptor) {
             is ByteArrayDescriptor,
             is ListBytesDescriptor ->
@@ -132,7 +141,6 @@ internal open class CborEncoder(
     }
 
     override fun beginStructure(descriptor: SerialDescriptor): CompositeEncoder {
-        encodeTag()
         when (descriptor) {
             is ByteArrayDescriptor,
             is ListBytesDescriptor ->
@@ -167,96 +175,75 @@ internal open class CborEncoder(
     // region PRIMITIVE ENCODING
 
     override fun encodeBoolean(value: Boolean) {
-        encodeTag()
         if (value) writer.write(HEADER_TRUE)
         else writer.write(HEADER_FALSE)
     }
 
     override fun encodeByte(value: Byte) {
-        encodeTag()
-        val v = value.toUByte()
-        if (v > BYTE_NEG) writer.writeMajor8(MAJOR_NEGATIVE, (v xor BYTE_FF))
-        else writer.writeMajor8(MAJOR_POSITIVE, v)
+        if (value < 0) writer.writeMajor8(MAJOR_NEGATIVE, value xor BYTE_FF)
+        else writer.writeMajor8(MAJOR_POSITIVE, value)
     }
 
     open fun encodeUByte(value: UByte) {
-        encodeTag()
-        writer.writeMajor8(MAJOR_POSITIVE, value)
+        writer.writeMajor8(MAJOR_POSITIVE, value.toByte())
     }
 
     open fun encodeUByteNeg(value: UByte) {
-        encodeTag()
-        writer.writeMajor8(MAJOR_NEGATIVE, value)
+        writer.writeMajor8(MAJOR_NEGATIVE, value.toByte())
     }
 
     override fun encodeShort(value: Short) {
-        encodeTag()
-        val v = value.toUShort()
-        if (v > SHORT_NEG) writer.writeMajor16(MAJOR_NEGATIVE, (v xor SHORT_FF))
-        else writer.writeMajor16(MAJOR_POSITIVE, v)
+        if (value < 0) writer.writeMajor16(MAJOR_NEGATIVE, value xor SHORT_FF)
+        else writer.writeMajor16(MAJOR_POSITIVE, value)
     }
 
     open fun encodeUShort(value: UShort) {
-        encodeTag()
-        writer.writeMajor16(MAJOR_POSITIVE, value)
+        writer.writeMajor16(MAJOR_POSITIVE, value.toShort())
     }
 
     open fun encodeUShortNeg(value: UShort) {
-        encodeTag()
-        writer.writeMajor16(MAJOR_NEGATIVE, value)
+        writer.writeMajor16(MAJOR_NEGATIVE, value.toShort())
     }
 
     override fun encodeInt(value: Int) {
-        encodeTag()
-        val v = value.toUInt()
-        if (v and INT_NEG > 0u) writer.writeMajor32(MAJOR_NEGATIVE, (v xor INT_FF))
-        else writer.writeMajor32(MAJOR_POSITIVE, v)
+        if (value < 0) writer.writeMajor32(MAJOR_NEGATIVE, value xor INT_FF)
+        else writer.writeMajor32(MAJOR_POSITIVE, value)
     }
 
     open fun encodeUInt(value: UInt) {
-        encodeTag()
-        writer.writeMajor32(MAJOR_POSITIVE, value)
+        writer.writeMajor32(MAJOR_POSITIVE, value.toInt())
     }
 
     open fun encodeUIntNeg(value: UInt) {
-        encodeTag()
-        writer.writeMajor32(MAJOR_NEGATIVE, value)
+        writer.writeMajor32(MAJOR_NEGATIVE, value.toInt())
     }
 
     override fun encodeLong(value: Long) {
-        encodeTag()
-        val v = value.toULong()
-        if (v and LONG_NEG > 0u) writer.writeMajor64(MAJOR_NEGATIVE, (v xor LONG_FF))
-        else writer.writeMajor64(MAJOR_POSITIVE, v)
+        if (value < 0) writer.writeMajor64(MAJOR_NEGATIVE, value xor LONG_FF)
+        else writer.writeMajor64(MAJOR_POSITIVE, value)
     }
 
     open fun encodeULong(value: ULong) {
-        encodeTag()
-        writer.writeMajor64(MAJOR_POSITIVE, value)
+        writer.writeMajor64(MAJOR_POSITIVE, value.toLong())
     }
 
     open fun encodeULongNeg(value: ULong) {
-        encodeTag()
-        writer.writeMajor64(MAJOR_NEGATIVE, value)
+        writer.writeMajor64(MAJOR_NEGATIVE, value.toLong())
     }
 
     override fun encodeFloat(value: Float) {
-        encodeTag()
         val float16Bits = float32ToFloat16bits(value)
         // NaN != NaN. toRawBits is necessary
         if (float16BitsToFloat32(float16Bits).toRawBits() == value.toRawBits())
-            writer.writeHeader16(HEADER_FLOAT_16, float16Bits.toUShort())
-        else writer.writeHeader32(HEADER_FLOAT_32, value.toRawBits().toUInt())
+            writer.writeHeader16(HEADER_FLOAT_16, float16Bits.toShort())
+        else writer.writeHeader32(HEADER_FLOAT_32, value.toRawBits())
     }
 
     override fun encodeDouble(value: Double) {
         val floatValue = float64toFloat32(value)
         // NaN != NaN. toRawBits is necessary
         if (floatValue.toDouble().toRawBits() == value.toRawBits()) encodeFloat(floatValue)
-        else {
-            encodeTag()
-            writer.writeHeader64(HEADER_FLOAT_64, value.toRawBits().toULong())
-        }
+        else writer.writeHeader64(HEADER_FLOAT_64, value.toRawBits())
     }
 
     override fun encodeNull() = writer.write(HEADER_NULL)
@@ -266,7 +253,6 @@ internal open class CborEncoder(
     override fun encodeChar(value: Char) = encodeString(value.toString())
 
     override fun encodeString(value: String) {
-        encodeTag()
         if (tracker.encParentIsInfinite || tracker.encFieldIsInfinite) encodeStringInfinite(value)
         else encodeRawString(value.encodeToByteArray())
     }
@@ -283,21 +269,19 @@ internal open class CborEncoder(
     }
 
     open fun encodeRawString(value: ByteArray, offset: Int = 0, count: Int = value.size) {
-        writer.writeMajor32(MAJOR_TEXT, count.toUInt())
+        writer.writeMajor32(MAJOR_TEXT, count)
         if (count != 0) writer.write(value, offset, count)
     }
 
 
     open fun encodeBytesElement(serialDescriptor: SerialDescriptor, index: Int, value: ByteArray) = encodeBytes(value)
     open fun encodeBytes(value: ByteArray, offset: Int = 0, count: Int = value.size) {
-        encodeTag()
-        writer.writeMajor32(MAJOR_BYTE, count.toUInt())
+        writer.writeMajor32(MAJOR_BYTE, count)
         if (count != 0) writer.write(value, offset, count)
     }
 
     // TODO : Enums as ints ?
     override fun encodeEnum(enumDescriptor: SerialDescriptor, index: Int) {
-        encodeTag()
         encodeString(enumDescriptor.getElementName(index))
     }
 

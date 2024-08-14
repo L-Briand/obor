@@ -21,6 +21,7 @@ val isSigningEnabled = findFilledProperty("signing.keyId") != null &&
         findFilledProperty("signing.secretKeyRingFile") != null
 
 repositories {
+    mavenLocal()
     mavenCentral()
 }
 

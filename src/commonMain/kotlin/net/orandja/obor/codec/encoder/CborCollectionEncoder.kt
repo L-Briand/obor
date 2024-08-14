@@ -17,10 +17,10 @@ internal abstract class CborCollectionEncoder(
 ) : CborEncoder(writer, serializersModule, newEncoderTracker(parent)) {
 
     /** Major to write at the start of the structure */
-    abstract val finiteToken: UByte
+    abstract val finiteToken: Byte
 
     /** Major to write at the end of the structure */
-    abstract val infiniteToken: UByte
+    abstract val infiniteToken: Byte
 
     override fun startCollection(descriptor: SerialDescriptor, collectionSize: Int): CborEncoder {
         super.startCollection(descriptor, collectionSize)
@@ -34,7 +34,7 @@ internal abstract class CborCollectionEncoder(
         for (i in 0 until descriptor.elementsCount) {
             if (descriptor.getElementAnnotations(i).any { it is CborSkip }) newCollectionSize--
         }
-        writer.writeMajor32(finiteToken, newCollectionSize.toUInt())
+        writer.writeMajor32(finiteToken, newCollectionSize)
         return this
     }
 

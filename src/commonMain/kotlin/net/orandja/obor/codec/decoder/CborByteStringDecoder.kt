@@ -13,7 +13,7 @@ internal class CborByteStringDecoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionDecoder(reader, serializersModule, parent) {
-    override val major: UByte = MAJOR_BYTE
+    override val major: Byte = MAJOR_BYTE
 
     private var innerCollectionSize = 0
     private var indexCounter = 0
@@ -32,7 +32,7 @@ internal class CborByteStringDecoder(
             indexCounter = 0
             innerCollectionSize = 0
         }
-        return reader.peekConsume().toByte()
+        return reader.peekConsume()
     }
 
     // TODO : Restrict elements to be only byte

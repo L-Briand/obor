@@ -2,6 +2,7 @@ package net.orandja.obor
 
 import kotlinx.serialization.serializer
 import net.orandja.obor.codec.*
+import kotlin.experimental.or
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
@@ -39,29 +40,29 @@ class MajorArrayTest {
 
 
         val PRIMITIVE_BOOLEAN = BooleanArray(1) { false }
-        val CBOR_PRIMITIVE_BOOLEAN = buildCbor { writeMajor8(MAJOR_ARRAY, 1u); write(HEADER_FALSE) }
+        val CBOR_PRIMITIVE_BOOLEAN = buildCbor { writeMajor8(MAJOR_ARRAY, 1); write(HEADER_FALSE) }
         val PRIMITIVE_BYTE = ByteArray(1) { 0 }
-        val CBOR_PRIMITIVE_BYTE = buildCbor { writeMajor8(MAJOR_ARRAY, 1u); write(0) }
+        val CBOR_PRIMITIVE_BYTE = buildCbor { writeMajor8(MAJOR_ARRAY, 1); write(0) }
         val PRIMITIVE_SHORT = ShortArray(1) { 0 }
-        val CBOR_PRIMITIVE_SHORT = buildCbor { writeMajor8(MAJOR_ARRAY, 1u); write(0) }
+        val CBOR_PRIMITIVE_SHORT = buildCbor { writeMajor8(MAJOR_ARRAY, 1); write(0) }
         val PRIMITIVE_INT = IntArray(1) { 0 }
-        val CBOR_PRIMITIVE_INT = buildCbor { writeMajor8(MAJOR_ARRAY, 1u); write(0) }
+        val CBOR_PRIMITIVE_INT = buildCbor { writeMajor8(MAJOR_ARRAY, 1); write(0) }
         val PRIMITIVE_LONG = LongArray(1) { 0 }
-        val CBOR_PRIMITIVE_LONG = buildCbor { writeMajor8(MAJOR_ARRAY, 1u); write(0) }
+        val CBOR_PRIMITIVE_LONG = buildCbor { writeMajor8(MAJOR_ARRAY, 1); write(0) }
         val PRIMITIVE_CHAR = CharArray(1) { 'a' }
         val CBOR_PRIMITIVE_CHAR = buildCbor {
-            writeMajor8(MAJOR_ARRAY, 1u)
-            writeHeader8(MAJOR_TEXT or 1u, 'a'.code.toUByte())
+            writeMajor8(MAJOR_ARRAY, 1)
+            writeHeader8(MAJOR_TEXT or 1, 'a'.code.toByte())
         }
         val PRIMITIVE_FLOAT = FloatArray(1) { 0.0f }
         val CBOR_PRIMITIVE_FLOAT = buildCbor {
-            writeMajor8(MAJOR_ARRAY, 1u)
-            writeHeader16(HEADER_FLOAT_16, float32ToFloat16bits(0.0f).toUShort())
+            writeMajor8(MAJOR_ARRAY, 1)
+            writeHeader16(HEADER_FLOAT_16, float32ToFloat16bits(0.0f).toShort())
         }
         val PRIMITIVE_DOUBLE = DoubleArray(1) { 0.0 }
         val CBOR_PRIMITIVE_DOUBLE = buildCbor {
-            writeMajor8(MAJOR_ARRAY, 1u)
-            writeHeader16(HEADER_FLOAT_16, float32ToFloat16bits(0.0f).toUShort())
+            writeMajor8(MAJOR_ARRAY, 1)
+            writeHeader16(HEADER_FLOAT_16, float32ToFloat16bits(0.0f).toShort())
         }
     }
 

@@ -9,8 +9,8 @@ inline fun Array<Long>.setFlag(index: Int, flag: Long, op: Boolean) {
 
 // region DECODER
 
-internal inline fun newDecoderTracker() = arrayOf(0L, 0L, 0L, 0L)
-internal inline fun newDecoderTracker(parent: Array<Long>) = arrayOf(0L, 0L, parent[0], parent[1])
+internal inline fun newDecoderTracker() = arrayOf(0L, 0L, 0L, 0L, 0L, 0L)
+internal inline fun newDecoderTracker(parent: Array<Long>) = arrayOf(0L, 0L, 0L, 0L, parent[0], parent[1])
 
 // @formatter:off
 internal const val DEC_TAG =         0b01L
@@ -49,9 +49,10 @@ internal inline fun newEncoderTracker() = arrayOf(0L, 0L, 0L, 0L, 0L, 0L)
 internal inline fun newEncoderTracker(parent: Array<Long>) = arrayOf(0L, 0L, 0L, 0L, parent[2], parent[3])
 
 // @formatter:off
-internal const val ENC_INFINITE  = 0b001L
-internal const val ENC_RAW_BYTES = 0b010L
-internal const val ENC_TAG       = 0b100L
+internal const val ENC_INFINITE  = 0b0001L
+internal const val ENC_RAW_BYTES = 0b0010L
+internal const val ENC_TAG       = 0b0100L
+internal const val ENC_SKIP_TAG  = 0b1000L
 // @formatter:on
 
 internal inline var Array<Long>.encClassIsInfinite: Boolean
@@ -81,6 +82,10 @@ internal inline var Array<Long>.encFieldIsRawBytes: Boolean
 internal inline var Array<Long>.encFieldHasTag: Boolean
     get() = getFlag(2, ENC_TAG)
     set(value) = setFlag(2, ENC_TAG, value)
+
+internal inline var Array<Long>.encFieldSkipTag: Boolean
+    get() = getFlag(2, ENC_SKIP_TAG)
+    set(value) = setFlag(2, ENC_SKIP_TAG, value)
 
 internal inline var Array<Long>.encFieldTag: Long
     get() = get(3)

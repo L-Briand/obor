@@ -10,7 +10,7 @@ internal class CborMapDecoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionDecoder(reader, serializersModule, parent) {
-    override val major: UByte = MAJOR_MAP
+    override val major: Byte = MAJOR_MAP
 
     override fun decodeCollectionSize(descriptor: SerialDescriptor): Int = super.decodeCollectionSize(descriptor) * 2
 }

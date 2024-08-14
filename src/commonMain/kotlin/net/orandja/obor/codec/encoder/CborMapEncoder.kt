@@ -10,7 +10,7 @@ internal class CborMapEncoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionEncoder(writer, serializersModule, parent) {
-    override val finiteToken: UByte = HEADER_MAP_START
-    override val infiniteToken: UByte = HEADER_MAP_INFINITE
+    override val finiteToken: Byte = HEADER_MAP_START
+    override val infiniteToken: Byte = HEADER_MAP_INFINITE
 
 }

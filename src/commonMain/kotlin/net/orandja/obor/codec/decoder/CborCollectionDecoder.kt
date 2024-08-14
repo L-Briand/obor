@@ -10,6 +10,7 @@ import net.orandja.obor.codec.SIZE_INFINITE
 import net.orandja.obor.codec.hasMajor
 import net.orandja.obor.codec.newDecoderTracker
 import net.orandja.obor.io.CborReader
+import kotlin.experimental.and
 
 /** Base class for decoding all [StructureKind] */
 @OptIn(ExperimentalSerializationApi::class)
@@ -31,12 +32,11 @@ internal abstract class CborCollectionDecoder(
      * Major kind of the structure expected to decode.
      * Throw an exception if it does not match the expected type
      */
-    abstract val major: UByte
+    abstract val major: Byte
 
     override fun startStructure(descriptor: SerialDescriptor): CompositeDecoder {
         super.startStructure(descriptor)
-        if (!(reader.peek() hasMajor major))
-            throw CborDecoderException.Default()
+        if (!(reader.peek() hasMajor major)) throw CborDecoderException.Default()
 
         isStructureInfinite = (reader.peek() and SIZE_INFINITE) == SIZE_INFINITE
         if (!isStructureInfinite) size = decodeCollectionSize(descriptor)

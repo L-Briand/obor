@@ -2,13 +2,9 @@ package net.orandja.obor.io
 
 interface CborReader {
 
-    fun peek(): UByte
+    fun peek(): Byte
     fun consume()
-    fun peekConsume(): UByte {
-        val result = peek()
-        consume()
-        return result
-    }
+    fun peekConsume(): Byte
 
     /** Always read the next byte. Should not return peeked value. */
     fun read(): Byte

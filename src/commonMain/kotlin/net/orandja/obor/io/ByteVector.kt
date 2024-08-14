@@ -1,6 +1,6 @@
 package net.orandja.obor.io
 
-class ByteVector(initialCapacity: Int = 32) : Vector<Byte, ByteArray> {
+class ByteVector(initialCapacity: Int = 128) : Vector<Byte, ByteArray> {
     private fun oob(message: String): Nothing = throw IndexOutOfBoundsException(message)
 
     override var array: ByteArray = ByteArray(initialCapacity)
@@ -8,18 +8,17 @@ class ByteVector(initialCapacity: Int = 32) : Vector<Byte, ByteArray> {
 
     override val nativeArray get() = array.copyOfRange(0, size)
 
-    private fun ensureCapacity(elementsToAppend: Int) {
+    override fun ensureCapacity(elementsToAppend: Int) {
         if (size + elementsToAppend <= array.size) return
         val newArray = ByteArray((size + elementsToAppend).takeHighestOneBit() shl 1)
         array.copyInto(newArray)
         array = newArray
     }
 
-    override fun get(index: Int): Byte =
-        if (index in 0..<size) array[index] else oob("Index $index is out of bounds. Range: ${0..<size} ")
-
-    override fun set(index: Int, value: Byte) =
-        if (index in 0..<size) array[index] = value else oob("Index $index is out of bounds. Range: ${0..<size} ")
+    override fun get(index: Int): Byte = array[index]
+    override fun set(index: Int, value: Byte) {
+        array[index] = value
+    }
 
     override fun add(value: Byte) {
         ensureCapacity(1)

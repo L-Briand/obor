@@ -11,8 +11,8 @@ internal class CborByteStringEncoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionEncoder(writer, serializersModule, parent) {
-    override val finiteToken: UByte = HEADER_BYTE_START
-    override val infiniteToken: UByte = HEADER_BYTE_INFINITE
+    override val finiteToken: Byte = HEADER_BYTE_START
+    override val infiniteToken: Byte = HEADER_BYTE_INFINITE
 
     private val buffer by lazy { ByteVector(255) }
 
@@ -21,7 +21,7 @@ internal class CborByteStringEncoder(
     override fun encodeElement(descriptor: SerialDescriptor, index: Int): Boolean = true
 
     override fun encodeByte(value: Byte) {
-        if (!(tracker.encParentIsInfinite || tracker.encClassIsInfinite)) writer.write(value.toUByte())
+        if (!(tracker.encParentIsInfinite || tracker.encClassIsInfinite)) writer.write(value)
         else {
             buffer.add(value)
             if (buffer.size == 255) flush()
@@ -30,7 +30,7 @@ internal class CborByteStringEncoder(
 
     private fun flush() {
         if (!(tracker.encParentIsInfinite || tracker.encClassIsInfinite) || buffer.size == 0) return
-        writer.writeMajor32(MAJOR_BYTE, buffer.size.toUInt())
+        writer.writeMajor32(MAJOR_BYTE, buffer.size)
         writer.write(buffer.nativeArray, 0, buffer.size)
         buffer.clear()
     }

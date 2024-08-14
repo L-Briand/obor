@@ -9,7 +9,7 @@ internal class CborTextDecoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionDecoder(reader, serializersModule, parent) {
-    override val major: UByte = MAJOR_TEXT
+    override val major: Byte = MAJOR_TEXT
 
     // TODO: restrict elements to be only Strings
 }

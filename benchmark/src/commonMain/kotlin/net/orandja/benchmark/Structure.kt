@@ -1,0 +1,47 @@
+package net.orandja.benchmark
+
+import kotlinx.benchmark.Benchmark
+import kotlinx.benchmark.Scope
+import kotlinx.benchmark.State
+import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.cbor.Cbor
+import net.orandja.obor.codec.Cbor as Obor
+
+@OptIn(ExperimentalSerializationApi::class)
+@State(Scope.Benchmark)
+class Structure {
+
+    @Serializable
+    data class Foo(val foo: String, val bar: Bar, val baz: Boolean)
+
+    @Serializable
+    data class Bar(val bar: Int, val baz: List<Int>)
+
+    companion object {
+        val foo = Foo("Hello", Bar(3, listOf(1, 2, 3)), false)
+        val fooCbor = Obor.encodeToByteArray(Foo.serializer(), foo)
+    }
+
+    @Benchmark
+    fun encodeCbor() {
+        Cbor {
+            this.verifyKeyTags
+        }.encodeToByteArray(Foo.serializer(), foo)
+    }
+
+    @Benchmark
+    fun encodeObor() {
+        Obor.encodeToByteArray(Foo.serializer(), foo)
+    }
+
+    @Benchmark
+    fun decodeCbor() {
+        Cbor.decodeFromByteArray(Foo.serializer(), fooCbor)
+    }
+
+    @Benchmark
+    fun decodeObor() {
+        Obor.decodeFromByteArray(Foo.serializer(), fooCbor)
+    }
+}

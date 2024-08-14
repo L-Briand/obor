@@ -9,5 +9,5 @@ internal class CborListDecoder(
     serializersModule: SerializersModule,
     parent: Array<Long>,
 ) : CborCollectionDecoder(reader, serializersModule, parent) {
-    override val major: UByte = MAJOR_ARRAY
+    override val major: Byte = MAJOR_ARRAY
 }

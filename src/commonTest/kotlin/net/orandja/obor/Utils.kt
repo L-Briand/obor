@@ -8,26 +8,27 @@ import net.orandja.obor.codec.SIZE_INFINITE
 import net.orandja.obor.io.ByteVector
 import net.orandja.obor.io.CborByteWriter
 import net.orandja.obor.io.CborWriter
+import kotlin.experimental.or
 import kotlin.math.ceil
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 
 
-fun buildSize(major: UByte, amount: Int, value: UByte = 0u) = buildCbor { buildSize(major, amount, value) }
-fun CborWriter.buildSize(major: UByte, amount: Int, value: UByte = 0u) {
-    writeMajor32(major, (amount).toUInt())
+fun buildSize(major: Byte, amount: Int, value: Byte = 0) = buildCbor { buildSize(major, amount, value) }
+fun CborWriter.buildSize(major: Byte, amount: Int, value: Byte = 0) {
+    writeMajor32(major, amount)
     repeat(amount) { write(value) }
 }
 
-fun buildChunkedInfinite(major: UByte, amount: Int, chunk: Int, value: UByte = 0u) = buildCbor {
-    write((major or SIZE_INFINITE).toUByte())
+fun buildChunkedInfinite(major: Byte, amount: Int, chunk: Int, value: Byte = 0) = buildCbor {
+    write((major or SIZE_INFINITE))
     repeat(amount / chunk) { buildSize(major, chunk, value) }
     if (amount % chunk > 0) buildSize(major, amount % chunk, value)
     write(HEADER_BREAK)
 }
 
-fun buildInfinite(major: UByte, amount: Int, onValue: CborWriter.() -> Unit) = buildCbor {
-    write((major or SIZE_INFINITE).toUByte())
+fun buildInfinite(major: Byte, amount: Int, onValue: CborWriter.() -> Unit) = buildCbor {
+    write((major or SIZE_INFINITE))
     repeat(amount) { onValue() }
     write(HEADER_BREAK)
 }
