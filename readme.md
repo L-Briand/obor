@@ -43,20 +43,11 @@ data class Example(val foo: String, val bar: Int)
 
 fun main() {
     val example = Example("Hello World !", 42)
-    // Encode example into ByteArray
     val encode = Cbor.encodeToHexString(example)
-    println(encode.joinToString("", "0x") { "%02X".format(it) })
-    // Decode example from ByteArray
-    val decode = Cbor.decodeFromHexString(Example.serializer(), encode)
-    println(decode == example)
+    assert(encode == "a263666f6f6d48656c6c6f20576f726c64202163626172182a")
+    val decode = Cbor.decodeFromHexString<Example>(encode)
+    assert(example == decode)
 }
-```
-
-This prints:
-
-```
-a263666f6f6d48656c6c6f20576f726c64202163626172182a
-true
 ```
 
 The bytes translate to:
