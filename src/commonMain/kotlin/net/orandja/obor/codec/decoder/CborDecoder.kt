@@ -23,7 +23,7 @@ import kotlin.experimental.xor
  * @param reader Something that reads Cbor header and bytes.
  * @see CborReader
  */
-@OptIn(ExperimentalUnsignedTypes::class, ExperimentalSerializationApi::class)
+@OptIn(ExperimentalSerializationApi::class)
 internal open class CborDecoder(
     protected val reader: CborReader,
     override val serializersModule: SerializersModule,
@@ -391,13 +391,12 @@ internal open class CborDecoder(
     // Quick note :
     // println(0xFFFF_FFFF) // 4294967295
     // println(0xFFFF_FFFF.toInt()) // -1
-    // println(0xFFFF_FFFF.toInt().toLong()) // -1
-    // We first need to encode in the correct format then transform it in unsigned type
+    // println(0xFFFF_FFFF.toInt().toLong()) // -1  ¯\_(ツ)_/¯
 
     fun decodeUByte(): UByte {
         return when (val it = reader.peekConsume()) {
             in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toUByte()
-            HEADER_POSITIVE_8 -> reader.nextUByte().toByte().toUByte()
+            HEADER_POSITIVE_8 -> reader.nextUByte()
             else -> throw CborDecoderException.Default()
         }
     }

@@ -9,6 +9,7 @@ import net.orandja.obor.annotations.CborInfinite
 
 @OptIn(ExperimentalSerializationApi::class)
 abstract class ListLikeDescriptor(name: String, private val elementDescriptor: SerialDescriptor) : SerialDescriptor {
+    override val annotations: List<Annotation> = listOf()
     override val elementsCount: Int = 1
     override val kind: SerialKind = StructureKind.LIST
     override val serialName: String = name
@@ -33,11 +34,9 @@ abstract class ListLikeDescriptor(name: String, private val elementDescriptor: S
 
 class ByteArrayDescriptor(name: String) : ListLikeDescriptor(name, Byte.serializer().descriptor)
 class ListBytesDescriptor(name: String) : ListLikeDescriptor(name, ByteArrayDescriptor(name)) {
-    @OptIn(ExperimentalSerializationApi::class)
     override val annotations: List<Annotation> = listOf(CborInfinite())
 }
 
 class ListStringsDescriptor(name: String) : ListLikeDescriptor(name, String.serializer().descriptor) {
-    @OptIn(ExperimentalSerializationApi::class)
     override val annotations: List<Annotation> = listOf(CborInfinite())
 }

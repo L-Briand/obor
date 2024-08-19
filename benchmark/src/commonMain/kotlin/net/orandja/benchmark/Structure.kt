@@ -25,23 +25,21 @@ class Structure {
 
     @Benchmark
     fun encodeCbor() {
-        Cbor {
-            this.verifyKeyTags
-        }.encodeToByteArray(Foo.serializer(), foo)
+        Cbor.encodeToByteArray(Foo.serializer(), foo)
     }
 
     @Benchmark
     fun encodeObor() {
         Obor.encodeToByteArray(Foo.serializer(), foo)
     }
-
-    @Benchmark
-    fun decodeCbor() {
-        Cbor.decodeFromByteArray(Foo.serializer(), fooCbor)
-    }
-
-    @Benchmark
-    fun decodeObor() {
-        Obor.decodeFromByteArray(Foo.serializer(), fooCbor)
-    }
+//
+//    @Benchmark
+//    fun decodeCbor() {
+//        Cbor.decodeFromByteArray(Foo.serializer(), fooCbor)
+//    }
+//
+//    @Benchmark
+//    fun decodeObor() {
+//        Obor.decodeFromByteArray(Foo.serializer(), fooCbor)
+//    }
 }

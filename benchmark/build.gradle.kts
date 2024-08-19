@@ -52,7 +52,7 @@ kotlin {
                 implementation(libs.kotlinx.serialization.core)
                 implementation(libs.kotlinx.serialization.cbor)
                 implementation(libs.kotlinx.benchmark.runtime)
-                implementation("net.orandja.obor:obor:2.0.0")
+                implementation(project(":"))
             }
         }
     }

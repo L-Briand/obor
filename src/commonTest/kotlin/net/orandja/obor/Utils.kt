@@ -57,11 +57,9 @@ inline fun <reified T> assertTransformation(expected: ByteArray, data: T, serial
     assertContentEquals(expected, Cbor.encodeToByteArray(serializer, data))
 }
 
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun Int.chunkedSize(chunkSize: Int) = ceil(toFloat() / chunkSize.toFloat()).toInt()
+internal fun Int.chunkedSize(chunkSize: Int) = ceil(toFloat() / chunkSize.toFloat()).toInt()
 
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun ByteArray.chunked(chunkSize: Int): Sequence<ByteArray> = sequence {
+internal fun ByteArray.chunked(chunkSize: Int): Sequence<ByteArray> = sequence {
     var chunkSize = chunkSize
     var index = 0
     var offset: Int
@@ -75,11 +73,9 @@ internal inline fun ByteArray.chunked(chunkSize: Int): Sequence<ByteArray> = seq
     if (chunkSize > 0) yield(copyOfRange(offset, offset + chunkSize))
 }
 
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun ByteArray.chunkedArray(chunkSize: Int): Array<ByteArray> {
+internal fun ByteArray.chunkedArray(chunkSize: Int): Array<ByteArray> {
     val chunks = chunked(chunkSize).iterator()
     return Array(size.chunkedSize(chunkSize)) { chunks.next() }
 }
 
-@Suppress("NOTHING_TO_INLINE")
-internal inline fun ByteArray.chunkedList(chunkSize: Int): List<ByteArray> = chunked(chunkSize).toList()
+internal fun ByteArray.chunkedList(chunkSize: Int): List<ByteArray> = chunked(chunkSize).toList()

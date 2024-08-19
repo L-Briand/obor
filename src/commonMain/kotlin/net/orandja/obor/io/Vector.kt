@@ -4,16 +4,9 @@ package net.orandja.obor.io
 interface Vector<T, ArrayOfT> {
     val array: ArrayOfT
     val size: Int
-
     val nativeArray: ArrayOfT
 
-    operator fun get(index: Int): T
-    operator fun set(index: Int, value: T)
-
     fun ensureCapacity(elementsToAppend: Int)
-
     fun add(value: T)
     fun add(array: ArrayOfT, offset: Int, count: Int)
-
-    fun clear()
 }

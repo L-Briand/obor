@@ -8,28 +8,27 @@ import kotlin.experimental.and
 import kotlin.experimental.or
 
 /** Implementation of [CborWriter] for in memory ByteArray */
-class CborByteWriter(private val delegate: ByteVector) : CborWriter {
+class CborByteWriter(private val vector: ByteVector) : CborWriter {
 
     companion object {
-        private const val BYTE_MASK = 0xE0.toByte()
         private const val SHORT_BYTE_MASK = 0xFF_00.toShort()
         private const val INT_SHORT_MASK = 0xFFFF_0000.toInt()
         private const val LONG_INT_MASK = -4294967296 // 0xFFFFFFFF_00000000u.toLong()
     }
 
-    override fun write(byte: Byte) = delegate.add(byte)
-    override fun write(bytes: ByteArray, offset: Int, count: Int) = delegate.add(bytes, offset, count)
+    override fun write(byte: Byte) = vector.add(byte)
+    override fun write(bytes: ByteArray, offset: Int, count: Int) = vector.add(bytes, offset, count)
 
     override fun writeMajor8(major: Byte, value: Byte) {
-        if (0 <= value && value < SIZE_8) delegate.add(major or value)
+        if (value in 0..<SIZE_8) vector.add(major or value)
         else writeHeader8(major or SIZE_8, value)
     }
 
     override fun writeHeader8(header: Byte, value: Byte) {
-        delegate.ensureCapacity(2)
-        delegate[delegate.size] = header
-        delegate[delegate.size + 1] = value
-        delegate.size += 2
+        vector.ensureCapacity(2)
+        vector.array[vector.size] = header
+        vector.array[vector.size + 1] = value
+        vector.size += 2
     }
 
     override fun writeMajor16(major: Byte, value: Short) {
@@ -38,10 +37,10 @@ class CborByteWriter(private val delegate: ByteVector) : CborWriter {
     }
 
     override fun writeHeader16(header: Byte, value: Short) {
-        delegate.ensureCapacity(3)
-        delegate[delegate.size] = header
-        value.into(delegate.array, delegate.size + 1)
-        delegate.size += 3
+        vector.ensureCapacity(3)
+        vector.array[vector.size] = header
+        value.into(vector.array, vector.size + 1)
+        vector.size += 3
     }
 
     override fun writeMajor32(major: Byte, value: Int) {
@@ -50,10 +49,10 @@ class CborByteWriter(private val delegate: ByteVector) : CborWriter {
     }
 
     override fun writeHeader32(header: Byte, value: Int) {
-        delegate.ensureCapacity(5)
-        delegate[delegate.size] = header
-        value.into(delegate.array, delegate.size + 1)
-        delegate.size += 5
+        vector.ensureCapacity(5)
+        vector.array[vector.size] = header
+        value.into(vector.array, vector.size + 1)
+        vector.size += 5
     }
 
     override fun writeMajor64(major: Byte, value: Long) {
@@ -62,10 +61,10 @@ class CborByteWriter(private val delegate: ByteVector) : CborWriter {
     }
 
     override fun writeHeader64(header: Byte, value: Long) {
-        delegate.ensureCapacity(9)
-        delegate[delegate.size] = header
-        value.into(delegate.array, delegate.size + 1)
-        delegate.size += 9
+        vector.ensureCapacity(9)
+        vector.array[vector.size] = header
+        value.into(vector.array, vector.size + 1)
+        vector.size += 9
     }
 
     @Suppress("NOTHING_TO_INLINE")
