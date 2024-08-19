@@ -11,7 +11,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.codec.*
-import net.orandja.obor.io.ByteVector
+import net.orandja.obor.io.ExpandableByteArray
 import net.orandja.obor.io.CborReader
 import kotlin.experimental.and
 import kotlin.experimental.or
@@ -365,7 +365,7 @@ internal open class CborDecoder(
     }
 
     private fun decodeBytesInfinite(): ByteArray {
-        val result = ByteVector()
+        val result = ExpandableByteArray()
         var buffer: ByteArray
         val descriptor = ListBytesDescriptor(name(CborDecoder::class))
         decodeStructure(descriptor) {
@@ -375,10 +375,10 @@ internal open class CborDecoder(
                 index = decodeElementIndex(descriptor)
                 if (index == CompositeDecoder.DECODE_DONE) break
                 buffer = decodeBytesElement(descriptor.getElementDescriptor(index), index)
-                result.add(buffer, 0, buffer.size);
+                result.write(buffer, 0, buffer.size);
             }
         }
-        return result.nativeArray
+        return result.getSizedArray()
     }
 
     // TODO: Add enum decoding by index.

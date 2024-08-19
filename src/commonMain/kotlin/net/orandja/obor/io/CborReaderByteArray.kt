@@ -1,17 +1,19 @@
 package net.orandja.obor.io
 
-/** Implementation of [CborReader] for in memory ByteArray */
-internal class CborByteReader(private val array: ByteArray) : CborReader {
+/**
+ * Implementation of [CborReader] for in memory ByteArray.
+ */
+internal class CborReaderByteArray(private val array: ByteArray) : CborReader {
 
     private var position = 0
 
     override fun read(): Byte = array[position++]
 
-    override fun read(bytes: Int): ByteArray {
-        if (bytes == 0) return ByteArray(0)
-        val read = ByteArray(bytes)
-        array.copyInto(read, 0, position, position + bytes)
-        position += bytes
+    override fun read(count: Int): ByteArray {
+        if (count == 0) return ByteArray(0)
+        val read = ByteArray(count)
+        array.copyInto(read, 0, position, position + count)
+        position += count
         return read
     }
 

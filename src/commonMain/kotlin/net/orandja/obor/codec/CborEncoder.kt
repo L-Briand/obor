@@ -13,9 +13,9 @@ import net.orandja.obor.annotations.CborInfinite
 import net.orandja.obor.annotations.CborRawBytes
 import net.orandja.obor.annotations.CborSkip
 import net.orandja.obor.annotations.CborTag
-import net.orandja.obor.io.ByteVector
 import net.orandja.obor.io.CborWriter
-import net.orandja.obor.io.Vector
+import net.orandja.obor.io.ExpandableArray
+import net.orandja.obor.io.ExpandableByteArray
 import kotlin.experimental.and
 import kotlin.experimental.or
 import kotlin.experimental.xor
@@ -48,12 +48,17 @@ internal open class CborEncoder(
 
     /**
      * Contains the metadata annotations of all the previous elements in the hierarchy
-     * If you have `class A(val b: B)` The class A contains annotations, the field b contains annotations and
-     * the class B contains annotations
+     * If you have `class A(val b: B)`
+     * - The class A contains annotations,
+     * - the field b contains annotations and
+     * - the class B contains annotations
+     *
+     * So the tracker have:
      * - When dealing with b the tracker contains `[metadata A, metadata b]`
      * - When dealing with B the tracker contains `[metadata A, metadata b, metadata B]`
      *
-     * The tracker is a [Vector] in essence, but it is more efficient to have it embedded in the class directly.
+     * The tracker is a [ExpandableArray] in essence,
+     * but it is more efficient to have it embedded in the class directly.
      */
     private var tracker: ByteArray = ByteArray(16)
 
@@ -216,19 +221,15 @@ internal open class CborEncoder(
 
     // region Composite
 
+    // The default implementation of AbstractEncoder does not provide enough freedom to encode things correctly.
+    // Compositing is omitted because the tracker array exists. With a single instance of CborEncoder, everything is much faster.
+
     open fun shouldEncodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
         if (index < descriptor.elementsCount)
             for (annotation in descriptor.getElementAnnotations(index))
                 if (annotation is CborSkip)
                     return false
         return true
-    }
-
-    override fun encodeInline(descriptor: SerialDescriptor): Encoder {
-        updateTrackerWithAnnotations(descriptor.annotations)
-        updateTrackerWithAnnotations(descriptor.getElementAnnotations(0))
-        setFlag(depth, INLINE)
-        return this
     }
 
     private inline fun encodeElement(descriptor: SerialDescriptor, index: Int, block: () -> Unit) {
@@ -309,12 +310,27 @@ internal open class CborEncoder(
 
     // region PRIMITIVE ENCODING
 
-    private val buffer = ByteVector(0)
+    /**
+     * An inlined class will have the class and the value annotated.
+     * For example:
+     * ```kotlin
+     * @A value class B(@C val d: D)
+     * ```
+     * In this case `d` is both `@A` and `@C`
+     */
+    override fun encodeInline(descriptor: SerialDescriptor): Encoder {
+        updateTrackerWithAnnotations(descriptor.annotations)
+        updateTrackerWithAnnotations(descriptor.getElementAnnotations(0))
+        setFlag(depth, INLINE) // Tell beginStructure and beginCollection to skip depth increment.
+        return this
+    }
+
+    private val buffer = ExpandableByteArray(0)
 
     private inline fun flush(infinite: Boolean) {
         if (!infinite || buffer.size == 0) return
         writer.writeMajor32(MAJOR_BYTE, buffer.size)
-        writer.write(buffer.nativeArray, 0, buffer.size)
+        writer.write(buffer.getSizedArray(), 0, buffer.size)
         buffer.size = 0
     }
 
@@ -324,7 +340,7 @@ internal open class CborEncoder(
             // @CborInfinite @CborRawByte val data: ByteArray
             // Cbor.encodeToByteArray(CborByteArraySerializer, data)
             if (hasFlag(depth - 2, INFINITE) || hasFlag(depth - 1, INFINITE)) {
-                buffer.add(value)
+                buffer.write(value)
                 if (buffer.size == 255) flush(true)
             } else {
                 writer.write(value)
@@ -335,17 +351,17 @@ internal open class CborEncoder(
         }
     }
 
-    override fun encodeBoolean(value: Boolean) {
-        if (value) writer.write(HEADER_TRUE)
-        else writer.write(HEADER_FALSE)
-    }
-
     open fun encodeUByte(value: UByte) {
         writer.writeMajor8(MAJOR_POSITIVE, value.toByte())
     }
 
     open fun encodeUByteNeg(value: UByte) {
         writer.writeMajor8(MAJOR_NEGATIVE, value.toByte())
+    }
+
+    override fun encodeBoolean(value: Boolean) {
+        if (value) writer.write(HEADER_TRUE)
+        else writer.write(HEADER_FALSE)
     }
 
     override fun encodeShort(value: Short) {
@@ -426,7 +442,6 @@ internal open class CborEncoder(
         writer.writeMajor32(MAJOR_TEXT, count)
         if (count != 0) writer.write(value, offset, count)
     }
-
 
     open fun encodeBytesElement(serialDescriptor: SerialDescriptor, index: Int, value: ByteArray) = encodeBytes(value)
     open fun encodeBytes(value: ByteArray, offset: Int = 0, count: Int = value.size) {

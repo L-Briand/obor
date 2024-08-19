@@ -1,9 +1,9 @@
 package net.orandja.obor.io
 
-class ByteVector(initialCapacity: Int = 64) : Vector<Byte, ByteArray> {
+class ExpandableByteArray(initialCapacity: Int = 64) : ExpandableArray<Byte, ByteArray> {
     override var array: ByteArray = ByteArray(initialCapacity)
     override var size: Int = 0
-    override val nativeArray get() = array.copyOfRange(0, size)
+    override fun getSizedArray(): ByteArray = array.copyOfRange(0, size)
 
     override fun ensureCapacity(elementsToAppend: Int) {
         if (size + elementsToAppend <= array.size) return
@@ -12,13 +12,13 @@ class ByteVector(initialCapacity: Int = 64) : Vector<Byte, ByteArray> {
         array = newArray
     }
 
-    override fun add(value: Byte) {
+    override fun write(value: Byte) {
         ensureCapacity(1)
         array[size] = value
         size += 1
     }
 
-    override fun add(array: ByteArray, offset: Int, count: Int) {
+    override fun write(array: ByteArray, offset: Int, count: Int) {
         if (count == 0) return
         if (count !in 0..array.size || count + offset !in 0..array.size) throw IndexOutOfBoundsException(
             "Requested array range is out of range. Range is ${0..array.size} Requested is ${count..<count + offset}"

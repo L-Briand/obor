@@ -7,8 +7,10 @@ import net.orandja.obor.codec.SIZE_8
 import kotlin.experimental.and
 import kotlin.experimental.or
 
-/** Implementation of [CborWriter] for in memory ByteArray */
-class CborByteWriter(private val vector: ByteVector) : CborWriter {
+/**
+ * Implementation of [CborWriter] specific to [ExpandableByteArray] as receiver.
+ */
+internal class CborWriterExpandableByteArray(private val vector: ExpandableByteArray) : CborWriter, Writer<Byte, ByteArray> by vector {
 
     companion object {
         private const val SHORT_BYTE_MASK = 0xFF_00.toShort()
@@ -16,11 +18,8 @@ class CborByteWriter(private val vector: ByteVector) : CborWriter {
         private const val LONG_INT_MASK = -4294967296 // 0xFFFFFFFF_00000000u.toLong()
     }
 
-    override fun write(byte: Byte) = vector.add(byte)
-    override fun write(bytes: ByteArray, offset: Int, count: Int) = vector.add(bytes, offset, count)
-
     override fun writeMajor8(major: Byte, value: Byte) {
-        if (value in 0..<SIZE_8) vector.add(major or value)
+        if (value in 0..<SIZE_8) vector.write(major or value)
         else writeHeader8(major or SIZE_8, value)
     }
 

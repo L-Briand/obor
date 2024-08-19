@@ -32,11 +32,11 @@ open class Cbor private constructor(override val serializersModule: SerializersM
     }
 
     override fun <T> decodeFromByteArray(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T =
-        decodeFromReader(deserializer, CborByteReader(bytes))
+        decodeFromReader(deserializer, CborReaderByteArray(bytes))
 
     override fun <T> encodeToByteArray(serializer: SerializationStrategy<T>, value: T): ByteArray {
-        val out = ByteVector()
-        encodeToWriter(serializer, value, CborByteWriter(out))
-        return out.nativeArray
+        val out = ExpandableByteArray()
+        encodeToWriter(serializer, value, CborWriterExpandableByteArray(out))
+        return out.getSizedArray()
     }
 }

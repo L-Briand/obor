@@ -5,8 +5,8 @@ import kotlinx.serialization.serializer
 import net.orandja.obor.codec.Cbor
 import net.orandja.obor.codec.HEADER_BREAK
 import net.orandja.obor.codec.SIZE_INFINITE
-import net.orandja.obor.io.ByteVector
-import net.orandja.obor.io.CborByteWriter
+import net.orandja.obor.io.ExpandableByteArray
+import net.orandja.obor.io.CborWriterExpandableByteArray
 import net.orandja.obor.io.CborWriter
 import kotlin.experimental.or
 import kotlin.math.ceil
@@ -46,9 +46,9 @@ inline infix fun <reified T> T.encodeCbor(serializer: KSerializer<T>) =
     Cbor.encodeToByteArray(serializer, this)
 
 internal fun buildCbor(writer: CborWriter.() -> Unit): ByteArray {
-    val result = ByteVector()
-    CborByteWriter(result).apply(writer)
-    return result.nativeArray
+    val result = ExpandableByteArray()
+    CborWriterExpandableByteArray(result).apply(writer)
+    return result.getSizedArray()
 }
 
 
