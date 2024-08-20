@@ -2,7 +2,7 @@ package net.orandja.obor
 
 import kotlinx.serialization.builtins.serializer
 import net.orandja.obor.codec.Cbor
-import net.orandja.obor.codec.decoder.CborDecoderException
+import net.orandja.obor.codec.CborDecoderException
 import net.orandja.obor.serializer.CborUnsignedSerializer
 import kotlin.test.Test
 import kotlin.test.assertFailsWith

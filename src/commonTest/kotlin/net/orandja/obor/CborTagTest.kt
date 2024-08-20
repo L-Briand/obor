@@ -1,11 +1,9 @@
 package net.orandja.obor
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.encodeToHexString
 import kotlinx.serialization.serializer
 import net.orandja.obor.annotations.CborTag
-import net.orandja.obor.codec.Cbor
-import net.orandja.obor.codec.decoder.CborDecoderException
+import net.orandja.obor.codec.CborDecoderException
 import kotlin.jvm.JvmInline
 import kotlin.test.Test
 import kotlin.test.assertContentEquals

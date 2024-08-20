@@ -1,9 +1,11 @@
 package net.orandja.obor.io
 
+import net.orandja.obor.codec.*
 import net.orandja.obor.codec.SIZE_16
 import net.orandja.obor.codec.SIZE_32
 import net.orandja.obor.codec.SIZE_64
 import net.orandja.obor.codec.SIZE_8
+import net.orandja.obor.codec.SIZE_MASK
 import kotlin.experimental.and
 import kotlin.experimental.or
 
@@ -31,7 +33,7 @@ interface CborWriter : Writer<Byte, ByteArray> {
         private val buffer: ByteArray = ByteArray(9)
 
         override fun writeMajor8(major: Byte, value: Byte) {
-            if (value in 0..<SIZE_8) write(major or value)
+            if (value and SIZE_MASK < SIZE_8) write(major or value)
             else writeHeader8(major or SIZE_8, value)
         }
 

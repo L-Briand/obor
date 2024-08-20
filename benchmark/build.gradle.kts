@@ -1,5 +1,4 @@
 import kotlinx.benchmark.gradle.benchmark
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 
 plugins {
     alias(libs.plugins.multiplatform)
@@ -36,11 +35,6 @@ kotlin {
             useCommonJs()
             useEsModules()
         }
-        nodejs()
-    }
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
         nodejs()
     }
 

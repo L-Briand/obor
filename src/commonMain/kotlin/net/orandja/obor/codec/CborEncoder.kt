@@ -21,15 +21,15 @@ import kotlin.experimental.or
 import kotlin.experimental.xor
 
 /**
- * Default Cbor decoder.
+ * Default Cbor encoder.
  *
  * @param writer Something that writes Cbor header and bytes.
  * @see CborWriter
  */
 @Suppress("NOTHING_TO_INLINE")
 @OptIn(ExperimentalSerializationApi::class)
-internal open class CborEncoder(
-    protected val writer: CborWriter,
+internal class CborEncoder(
+    private val writer: CborWriter,
     override val serializersModule: SerializersModule
 ) : Encoder, CompositeEncoder {
 
@@ -49,9 +49,9 @@ internal open class CborEncoder(
     /**
      * Contains the metadata annotations of all the previous elements in the hierarchy
      * If you have `class A(val b: B)`
-     * - The class A contains annotations,
-     * - the field b contains annotations and
-     * - the class B contains annotations
+     * - The class A contains annotations
+     * - The field b contains annotations
+     * - The class B contains annotations
      *
      * So the tracker have:
      * - When dealing with b the tracker contains `[metadata A, metadata b]`
@@ -224,7 +224,7 @@ internal open class CborEncoder(
     // The default implementation of AbstractEncoder does not provide enough freedom to encode things correctly.
     // Compositing is omitted because the tracker array exists. With a single instance of CborEncoder, everything is much faster.
 
-    open fun shouldEncodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
+    private fun shouldEncodeElement(descriptor: SerialDescriptor, index: Int): Boolean {
         if (index < descriptor.elementsCount)
             for (annotation in descriptor.getElementAnnotations(index))
                 if (annotation is CborSkip)
@@ -240,16 +240,6 @@ internal open class CborEncoder(
         block()
         clear(depth)
         depth--
-    }
-
-    private inline fun <T> encodeElementAndReturn(descriptor: SerialDescriptor, index: Int, block: () -> T): T {
-        if (hasFlag(depth, STRUCTURE)) encodeRawString(descriptor.getElementName(index).encodeToByteArray())
-        depth++
-        updateTrackerWithAnnotations(descriptor.getElementAnnotations(index))
-        val result = block()
-        clear(depth)
-        depth--
-        return result
     }
 
     override fun encodeBooleanElement(descriptor: SerialDescriptor, index: Int, value: Boolean) {
@@ -303,15 +293,13 @@ internal open class CborEncoder(
     }
 
     override fun encodeInlineElement(descriptor: SerialDescriptor, index: Int): Encoder =
-        if (shouldEncodeElement(descriptor, index))
-            encodeElementAndReturn(descriptor, index) { encodeInline(descriptor.getElementDescriptor(index)) }
+        if (shouldEncodeElement(descriptor, index)) encodeInline(descriptor.getElementDescriptor(index))
         else CborEncoderNoOp
-
 
     // region PRIMITIVE ENCODING
 
     /**
-     * An inlined class will have the class and the value annotated.
+     * An inlined class will have the class and the value annotation.
      * For example:
      * ```kotlin
      * @A value class B(@C val d: D)
@@ -351,11 +339,11 @@ internal open class CborEncoder(
         }
     }
 
-    open fun encodeUByte(value: UByte) {
+    fun encodeUByte(value: UByte) {
         writer.writeMajor8(MAJOR_POSITIVE, value.toByte())
     }
 
-    open fun encodeUByteNeg(value: UByte) {
+    fun encodeUByteNeg(value: UByte) {
         writer.writeMajor8(MAJOR_NEGATIVE, value.toByte())
     }
 
@@ -369,11 +357,11 @@ internal open class CborEncoder(
         else writer.writeMajor16(MAJOR_POSITIVE, value)
     }
 
-    open fun encodeUShort(value: UShort) {
+    fun encodeUShort(value: UShort) {
         writer.writeMajor16(MAJOR_POSITIVE, value.toShort())
     }
 
-    open fun encodeUShortNeg(value: UShort) {
+    fun encodeUShortNeg(value: UShort) {
         writer.writeMajor16(MAJOR_NEGATIVE, value.toShort())
     }
 
@@ -382,11 +370,11 @@ internal open class CborEncoder(
         else writer.writeMajor32(MAJOR_POSITIVE, value)
     }
 
-    open fun encodeUInt(value: UInt) {
+    fun encodeUInt(value: UInt) {
         writer.writeMajor32(MAJOR_POSITIVE, value.toInt())
     }
 
-    open fun encodeUIntNeg(value: UInt) {
+    fun encodeUIntNeg(value: UInt) {
         writer.writeMajor32(MAJOR_NEGATIVE, value.toInt())
     }
 
@@ -395,11 +383,11 @@ internal open class CborEncoder(
         else writer.writeMajor64(MAJOR_POSITIVE, value)
     }
 
-    open fun encodeULong(value: ULong) {
+    fun encodeULong(value: ULong) {
         writer.writeMajor64(MAJOR_POSITIVE, value.toLong())
     }
 
-    open fun encodeULongNeg(value: ULong) {
+    fun encodeULongNeg(value: ULong) {
         writer.writeMajor64(MAJOR_NEGATIVE, value.toLong())
     }
 
@@ -438,13 +426,13 @@ internal open class CborEncoder(
         }
     }
 
-    open fun encodeRawString(value: ByteArray, offset: Int = 0, count: Int = value.size) {
+    fun encodeRawString(value: ByteArray, offset: Int = 0, count: Int = value.size) {
         writer.writeMajor32(MAJOR_TEXT, count)
         if (count != 0) writer.write(value, offset, count)
     }
 
-    open fun encodeBytesElement(serialDescriptor: SerialDescriptor, index: Int, value: ByteArray) = encodeBytes(value)
-    open fun encodeBytes(value: ByteArray, offset: Int = 0, count: Int = value.size) {
+    fun encodeBytesElement(serialDescriptor: SerialDescriptor, index: Int, value: ByteArray) = encodeBytes(value)
+    fun encodeBytes(value: ByteArray, offset: Int = 0, count: Int = value.size) {
         writer.writeMajor32(MAJOR_BYTE, count)
         if (count != 0) writer.write(value, offset, count)
     }

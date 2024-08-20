@@ -17,6 +17,13 @@ internal class CborReaderByteArray(private val array: ByteArray) : CborReader {
         return read
     }
 
+    override fun readAsString(count: Int): String {
+        if (count == 0) return ""
+        val result = array.decodeToString(position, position + count)
+        position += count
+        return result
+    }
+
     private var peek: Byte? = null
     override fun peek(): Byte {
         if (peek != null) return peek!!
@@ -28,45 +35,39 @@ internal class CborReaderByteArray(private val array: ByteArray) : CborReader {
         peek = null
     }
 
-    override fun peekConsume(): Byte {
-        val result = peek()
-        consume()
-        return result
-    }
+    override fun nextByte(): Byte = read()
 
-    override fun nextUByte(): UByte = read().toUByte()
-
-    override fun nextUShort(): UShort {
+    override fun nextShort(): Short {
         val result = (((array[position + 0].toInt() and 0xFF) shl 8) or
-                (array[position + 1].toInt() and 0xFF)).toUShort()
+                (array[position + 1].toInt() and 0xFF)).toShort()
         position += 2
         return result
     }
 
-    override fun nextUInt(): UInt {
+    override fun nextInt(): Int {
         val result = (((array[position + 0].toInt() and 0xFF) shl 24) or
                 ((array[position + 1].toInt() and 0xFF) shl 16) or
                 ((array[position + 2].toInt() and 0xFF) shl 8) or
-                (array[position + 3].toInt() and 0xFF)).toUInt()
+                (array[position + 3].toInt() and 0xFF))
         position += 4
         return result
     }
 
-    override fun nextULong(): ULong {
-        val result = (((array[position + 0].toLong() and 0xFF) shl 56) or
-                ((array[position + 1].toLong() and 0xFF) shl 48) or
-                ((array[position + 2].toLong() and 0xFF) shl 40) or
-                ((array[position + 3].toLong() and 0xFF) shl 32) or
-                ((array[position + 4].toLong() and 0xFF) shl 24) or
-                ((array[position + 5].toLong() and 0xFF) shl 16) or
-                ((array[position + 6].toLong() and 0xFF) shl 8) or
-                (array[position + 7].toLong() and 0xFF)).toULong()
+    override fun nextLong(): Long {
+        val result = (((array[position + 0].toLong() and 0xFFL) shl 56) or
+                ((array[position + 1].toLong() and 0xFFL) shl 48) or
+                ((array[position + 2].toLong() and 0xFFL) shl 40) or
+                ((array[position + 3].toLong() and 0xFFL) shl 32) or
+                ((array[position + 4].toLong() and 0xFFL) shl 24) or
+                ((array[position + 5].toLong() and 0xFFL) shl 16) or
+                ((array[position + 6].toLong() and 0xFFL) shl 8) or
+                (array[position + 7].toLong() and 0xFFL))
         position += 8
         return result
     }
 
-    override fun skip(bytes: Int) {
+    override fun skip(count: Int) {
         consume()
-        position += bytes
+        position += count
     }
 }

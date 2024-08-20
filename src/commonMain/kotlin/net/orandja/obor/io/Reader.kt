@@ -5,6 +5,7 @@ package net.orandja.obor.io
 interface Reader<T, arrayOfT> {
     fun read(): T
     fun read(count: Int): arrayOfT
+    fun readAsString(count: Int): String
     fun skip(count: Int)
 
     /** Simple implementation to read from a [ByteArray] */
@@ -17,8 +18,17 @@ interface Reader<T, arrayOfT> {
         }
 
         override fun read(count: Int): ByteArray {
+            if (count == 0) return byteArrayOf()
             if (position + count > bytes.size) throw IndexOutOfBoundsException("Cannot read beyond the end of the byte array.")
             val result = bytes.copyOfRange(position, position + count)
+            position += count
+            return result
+        }
+
+        override fun readAsString(count: Int): String {
+            if (count == 0) return ""
+            if (position + count > bytes.size) throw IndexOutOfBoundsException("Cannot read beyond the end of the byte array.")
+            val result = bytes.decodeToString(position, position + count)
             position += count
             return result
         }

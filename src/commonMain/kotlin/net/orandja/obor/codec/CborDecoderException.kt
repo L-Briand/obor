@@ -1,4 +1,4 @@
-package net.orandja.obor.codec.decoder
+package net.orandja.obor.codec
 
 // TODO: Create exception for each of decode variant
 // TODO: Force index error info inside CborDecoderException

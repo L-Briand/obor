@@ -7,7 +7,6 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
-import net.orandja.obor.codec.decoder.CborDecoder
 import net.orandja.obor.io.*
 
 open class Cbor private constructor(override val serializersModule: SerializersModule = EmptySerializersModule()) :

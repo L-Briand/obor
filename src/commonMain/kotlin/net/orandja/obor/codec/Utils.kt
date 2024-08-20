@@ -6,7 +6,6 @@ import kotlinx.serialization.encoding.CompositeDecoder
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-import net.orandja.obor.codec.decoder.CborDecoder
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
@@ -27,7 +26,6 @@ internal const val MAJOR_TAG: Byte = -0x40
 internal const val MAJOR_PRIMITIVE: Byte = -0x20
 internal const val MAJOR_MASK: Byte = MAJOR_PRIMITIVE
 
-internal const val SIZE_0: Byte = 0x00
 internal const val SIZE_8: Byte = 0x18
 internal const val SIZE_16: Byte = 0x19
 internal const val SIZE_32: Byte = 0x1A
@@ -47,32 +45,6 @@ internal val HEADER_NEGATIVE_16: Byte = MAJOR_NEGATIVE or SIZE_16
 internal val HEADER_NEGATIVE_32: Byte = MAJOR_NEGATIVE or SIZE_32
 internal val HEADER_NEGATIVE_64: Byte = MAJOR_NEGATIVE or SIZE_64
 
-internal const val HEADER_BYTE_START: Byte = MAJOR_BYTE
-internal val HEADER_BYTE_8: Byte = MAJOR_BYTE or SIZE_8
-internal val HEADER_BYTE_16: Byte = MAJOR_BYTE or SIZE_16
-internal val HEADER_BYTE_32: Byte = MAJOR_BYTE or SIZE_32
-internal val HEADER_BYTE_64: Byte = MAJOR_BYTE or SIZE_64
-internal val HEADER_BYTE_INFINITE: Byte = MAJOR_BYTE or SIZE_INFINITE
-
-internal const val HEADER_TEXT_START: Byte = MAJOR_TEXT
-internal val HEADER_TEXT_8: Byte = MAJOR_TEXT or SIZE_8
-internal val HEADER_TEXT_16: Byte = MAJOR_TEXT or SIZE_16
-internal val HEADER_TEXT_32: Byte = MAJOR_TEXT or SIZE_32
-internal val HEADER_TEXT_64: Byte = MAJOR_TEXT or SIZE_64
-internal val HEADER_TEXT_INFINITE: Byte = MAJOR_TEXT or SIZE_INFINITE
-
-internal const val HEADER_ARRAY_START: Byte = MAJOR_ARRAY
-internal val HEADER_ARRAY_INFINITE: Byte = MAJOR_ARRAY or SIZE_INFINITE
-
-internal const val HEADER_MAP_START: Byte = MAJOR_MAP
-internal val HEADER_MAP_INFINITE: Byte = MAJOR_MAP or SIZE_INFINITE
-
-internal const val HEADER_TAG_START: Byte = MAJOR_TAG
-internal val HEADER_TAG_8: Byte = MAJOR_TAG or SIZE_8
-internal val HEADER_TAG_16: Byte = MAJOR_TAG or SIZE_16
-internal val HEADER_TAG_32: Byte = MAJOR_TAG or SIZE_32
-internal val HEADER_TAG_64: Byte = MAJOR_TAG or SIZE_64
-
 internal val HEADER_FALSE: Byte = MAJOR_PRIMITIVE or 0x14
 internal val HEADER_TRUE: Byte = MAJOR_PRIMITIVE or 0x15
 internal val HEADER_NULL: Byte = MAJOR_PRIMITIVE or 0x16
@@ -89,7 +61,8 @@ internal const val INT_FF: Int = -1
 internal const val LONG_FF: Long = -1
 
 internal inline infix fun Byte.hasMajor(flags: Byte) = ((this and MAJOR_MASK) == flags)
-internal inline fun <reified T> List<*>.findTypeOf() = firstOrNull { it is T } as? T
+
+// Others
 
 internal inline fun name(vararg klass: KClass<*>) = klass.map { it.simpleName }.joinToString(".")
 internal inline fun unreachable(): Nothing = throw NotImplementedError("You shall not be here.")

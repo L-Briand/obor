@@ -32,14 +32,14 @@ class Structure {
     fun encodeObor() {
         Obor.encodeToByteArray(Foo.serializer(), foo)
     }
-//
-//    @Benchmark
-//    fun decodeCbor() {
-//        Cbor.decodeFromByteArray(Foo.serializer(), fooCbor)
-//    }
-//
-//    @Benchmark
-//    fun decodeObor() {
-//        Obor.decodeFromByteArray(Foo.serializer(), fooCbor)
-//    }
+
+    @Benchmark
+    fun decodeCbor() {
+        Cbor.decodeFromByteArray(Foo.serializer(), fooCbor)
+    }
+
+    @Benchmark
+    fun decodeObor() {
+        Obor.decodeFromByteArray(Foo.serializer(), fooCbor)
+    }
 }
