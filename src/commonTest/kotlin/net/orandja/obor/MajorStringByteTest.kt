@@ -18,7 +18,7 @@ class MajorStringByteTest {
 
         // 0 ITEM
         val EMPTY: ByteArray = byteArrayOf()
-        val CBOR_EMPTY = buildCbor { writeMajor8(MAJOR_BYTE, 0u) }
+        val CBOR_EMPTY = buildCbor { writeMajor8(MAJOR_BYTE, 0) }
         val CBOR_EMPTY_INFINITE = buildChunkedInfinite(MAJOR_BYTE, 0, 10)
 
         // 1 ITEM

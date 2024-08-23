@@ -14,7 +14,7 @@ class MajorMapTest {
 
     @Test
     fun emptyMap() {
-        val CBOR_MAP_EMPTY = buildCbor { writeMajor8(MAJOR_MAP, 0u) }
+        val CBOR_MAP_EMPTY = buildCbor { writeMajor8(MAJOR_MAP, 0) }
         assertContentEquals(CBOR_MAP_EMPTY, emptyMap<Int, String>() encodeCbor serializer())
         assertEquals(emptyMap<Int, String>(), CBOR_MAP_EMPTY decodeCbor serializer<Map<Int, String>>())
         assertContentEquals(CBOR_MAP_EMPTY, emptyMap<Float, Boolean>() encodeCbor serializer())
@@ -37,11 +37,11 @@ class MajorMapTest {
     fun intTesting() {
         val MAP_INT = mapOf(0xFF.toLong() to 0xFFFF.toLong(), 0xFFFF_FFFF to 0x1FFF_FFFF_FFFF_FFFF)
         val CBOR_MAP_INT = buildCbor {
-            writeMajor8(MAJOR_MAP, 2u)
-            writeMajor64(MAJOR_POSITIVE, 0xFFu)
-            writeMajor64(MAJOR_POSITIVE, 0xFFFFu)
-            writeMajor64(MAJOR_POSITIVE, 0xFFFF_FFFFu)
-            writeMajor64(MAJOR_POSITIVE, 0x1FFF_FFFF_FFFF_FFFFu)
+            writeMajor8(MAJOR_MAP, 2)
+            writeMajor64(MAJOR_POSITIVE, 0xFF)
+            writeMajor64(MAJOR_POSITIVE, 0xFFFF)
+            writeMajor64(MAJOR_POSITIVE, 0xFFFF_FFFF)
+            writeMajor64(MAJOR_POSITIVE, 0x1FFF_FFFF_FFFF_FFFF)
         }
 
         run {

@@ -14,38 +14,38 @@ class MajorStringTextTest {
     companion object {
         // 0 ITEM
         val EMPTY = ""
-        val CBOR_EMPTY = buildCbor { writeMajor8(MAJOR_TEXT, 0u) }
-        val CBOR_EMPTY_INFINITE = buildChunkedInfinite(MAJOR_TEXT, 0, 10, 'a'.code.toUByte())
+        val CBOR_EMPTY = buildCbor { writeMajor8(MAJOR_TEXT, 0) }
+        val CBOR_EMPTY_INFINITE = buildChunkedInfinite(MAJOR_TEXT, 0, 10, 'a'.code.toByte())
 
         // 1 ITEM
         val ONE = "a"
-        val CBOR_ONE = buildSize(MAJOR_TEXT, 1, 'a'.code.toUByte())
-        val CBOR_ONE_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 1, 10, 'a'.code.toUByte())
-        val CBOR_ONE_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 1, 255, 'a'.code.toUByte())
+        val CBOR_ONE = buildSize(MAJOR_TEXT, 1, 'a'.code.toByte())
+        val CBOR_ONE_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 1, 10, 'a'.code.toByte())
+        val CBOR_ONE_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 1, 255, 'a'.code.toByte())
 
         // 23 ITEMS
         val MAX_SIZE0 = buildString { repeat(0x17) { append('a') } }
-        val CBOR_MAX_SIZE0 = buildSize(MAJOR_TEXT, 0x17, 'a'.code.toUByte())
-        val CBOR_MAX_SIZE0_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0x17, 10, 'a'.code.toUByte())
-        val CBOR_MAX_SIZE0_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0x17, 255, 'a'.code.toUByte())
+        val CBOR_MAX_SIZE0 = buildSize(MAJOR_TEXT, 0x17, 'a'.code.toByte())
+        val CBOR_MAX_SIZE0_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0x17, 10, 'a'.code.toByte())
+        val CBOR_MAX_SIZE0_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0x17, 255, 'a'.code.toByte())
 
         // 24 ITEMS
         val MIN_SIZE8 = buildString { repeat(0x18) { append('a') } }
-        val CBOR_MIN_SIZE8 = buildSize(MAJOR_TEXT, 0x18, 'a'.code.toUByte())
-        val CBOR_MIN_SIZE8_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0x18, 10, 'a'.code.toUByte())
-        val CBOR_MIN_SIZE8_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0x18, 255, 'a'.code.toUByte())
+        val CBOR_MIN_SIZE8 = buildSize(MAJOR_TEXT, 0x18, 'a'.code.toByte())
+        val CBOR_MIN_SIZE8_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0x18, 10, 'a'.code.toByte())
+        val CBOR_MIN_SIZE8_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0x18, 255, 'a'.code.toByte())
 
         // 255 ITEMS
         val MAX_SIZE8 = buildString { repeat(0xFF) { append('a') } }
-        val CBOR_MAX_SIZE8 = buildSize(MAJOR_TEXT, 0xFF, 'a'.code.toUByte())
-        val CBOR_MAX_SIZE8_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0xFF, 10, 'a'.code.toUByte())
-        val CBOR_MAX_SIZE8_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0xFF, 0xFF, 'a'.code.toUByte())
+        val CBOR_MAX_SIZE8 = buildSize(MAJOR_TEXT, 0xFF, 'a'.code.toByte())
+        val CBOR_MAX_SIZE8_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0xFF, 10, 'a'.code.toByte())
+        val CBOR_MAX_SIZE8_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0xFF, 0xFF, 'a'.code.toByte())
 
         // 257 ITEMS
         val MIN_SIZE16 = buildString { repeat(0x100) { append('a') } }
-        val CBOR_MIN_SIZE16 = buildSize(MAJOR_TEXT, 0x100, 'a'.code.toUByte())
-        val CBOR_MIN_SIZE16_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0x100, 10, 'a'.code.toUByte())
-        val CBOR_MIN_SIZE16_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0x100, 0xFF, 'a'.code.toUByte())
+        val CBOR_MIN_SIZE16 = buildSize(MAJOR_TEXT, 0x100, 'a'.code.toByte())
+        val CBOR_MIN_SIZE16_INFINITE_x10 = buildChunkedInfinite(MAJOR_TEXT, 0x100, 10, 'a'.code.toByte())
+        val CBOR_MIN_SIZE16_INFINITE_x255 = buildChunkedInfinite(MAJOR_TEXT, 0x100, 0xFF, 'a'.code.toByte())
     }
 
     private fun String.chunkedList(amount: Int) = chunked(amount)
@@ -146,6 +146,7 @@ class MajorStringTextTest {
 
     @Serializable
     data class InfiniteString(@CborInfinite val string: String)
+
     private fun cborInClass(cbor: ByteArray) = "A166737472696E67".hex() + cbor
 
     @Test
@@ -157,15 +158,27 @@ class MajorStringTextTest {
         assertContentEquals(cborInClass(CBOR_ONE_INFINITE_x255), InfiniteString(ONE) encodeCbor serializer())
 
         assertEquals(InfiniteString(MAX_SIZE0), cborInClass(CBOR_MAX_SIZE0_INFINITE_x255) decodeCbor serializer())
-        assertContentEquals(cborInClass(CBOR_MAX_SIZE0_INFINITE_x255), InfiniteString(MAX_SIZE0) encodeCbor serializer())
+        assertContentEquals(
+            cborInClass(CBOR_MAX_SIZE0_INFINITE_x255),
+            InfiniteString(MAX_SIZE0) encodeCbor serializer()
+        )
 
         assertEquals(InfiniteString(MIN_SIZE8), cborInClass(CBOR_MIN_SIZE8_INFINITE_x255) decodeCbor serializer())
-        assertContentEquals(cborInClass(CBOR_MIN_SIZE8_INFINITE_x255), InfiniteString(MIN_SIZE8) encodeCbor serializer())
+        assertContentEquals(
+            cborInClass(CBOR_MIN_SIZE8_INFINITE_x255),
+            InfiniteString(MIN_SIZE8) encodeCbor serializer()
+        )
 
         assertEquals(InfiniteString(MAX_SIZE8), cborInClass(CBOR_MAX_SIZE8_INFINITE_x255) decodeCbor serializer())
-        assertContentEquals(cborInClass(CBOR_MAX_SIZE8_INFINITE_x255), InfiniteString(MAX_SIZE8) encodeCbor serializer())
+        assertContentEquals(
+            cborInClass(CBOR_MAX_SIZE8_INFINITE_x255),
+            InfiniteString(MAX_SIZE8) encodeCbor serializer()
+        )
 
         assertEquals(InfiniteString(MIN_SIZE16), cborInClass(CBOR_MIN_SIZE16_INFINITE_x255) decodeCbor serializer())
-        assertContentEquals(cborInClass(CBOR_MIN_SIZE16_INFINITE_x255), InfiniteString(MIN_SIZE16) encodeCbor serializer())
+        assertContentEquals(
+            cborInClass(CBOR_MIN_SIZE16_INFINITE_x255),
+            InfiniteString(MIN_SIZE16) encodeCbor serializer()
+        )
     }
 }

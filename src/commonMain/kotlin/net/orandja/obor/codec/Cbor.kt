@@ -7,8 +7,6 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.modules.EmptySerializersModule
 import kotlinx.serialization.modules.SerializersModule
-import net.orandja.obor.codec.decoder.CborDecoder
-import net.orandja.obor.codec.encoder.CborEncoder
 import net.orandja.obor.io.*
 
 open class Cbor private constructor(override val serializersModule: SerializersModule = EmptySerializersModule()) :
@@ -33,11 +31,11 @@ open class Cbor private constructor(override val serializersModule: SerializersM
     }
 
     override fun <T> decodeFromByteArray(deserializer: DeserializationStrategy<T>, bytes: ByteArray): T =
-        decodeFromReader(deserializer, CborByteReader(bytes))
+        decodeFromReader(deserializer, CborReaderByteArray(bytes))
 
     override fun <T> encodeToByteArray(serializer: SerializationStrategy<T>, value: T): ByteArray {
-        val out = ByteVector()
-        encodeToWriter(serializer, value, CborByteWriter(out))
-        return out.nativeArray
+        val out = ExpandableByteArray()
+        encodeToWriter(serializer, value, CborWriterExpandableByteArray(out))
+        return out.getSizedArray()
     }
 }
