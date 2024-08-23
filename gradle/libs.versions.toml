@@ -1,5 +1,5 @@
 [versions]
-kotlin = "2.0.10"
+kotlin = "2.0.20"
 kotlinx-serialization = "1.7.1"
 kotlinx-benchmark = "0.4.11"
 
