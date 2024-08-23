@@ -59,22 +59,6 @@ benchmark {
         register("wasmJs")
         register("linuxX64")
     }
-
-    configurations {
-        named("main") {
-            warmups = 20
-            iterations = 10
-            iterationTime = 3
-            iterationTimeUnit = "s"
-        }
-
-        register("smoke") {
-            warmups = 5
-            iterations = 3
-            iterationTime = 3000
-            iterationTimeUnit = "ms"
-        }
-    }
 }
 
 allOpen {
