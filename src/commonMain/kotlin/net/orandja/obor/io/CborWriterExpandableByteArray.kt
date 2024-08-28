@@ -9,6 +9,7 @@ import kotlin.experimental.or
 
 /**
  * Implementation of [CborWriter] specific to [ExpandableByteArray] as receiver.
+ * If you want to quickly create a [CborWriter] use [CborWriter.ByWriter] with [Writer.OfByteArray]
  */
 internal class CborWriterExpandableByteArray(private val vector: ExpandableByteArray) : CborWriter, Writer<Byte, ByteArray> by vector {
 

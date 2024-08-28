@@ -65,7 +65,7 @@ internal inline infix fun Byte.hasMajor(flags: Byte) = ((this and MAJOR_MASK) ==
 // Others
 
 internal inline fun name(vararg klass: KClass<*>) = klass.map { it.simpleName }.joinToString(".")
-internal inline fun unreachable(): Nothing = throw NotImplementedError("You shall not be here.")
+internal inline fun unreachable(): Nothing = throw NotImplementedError("Unreachable code reached.")
 
 @OptIn(ExperimentalContracts::class)
 internal inline fun Decoder.assertCborDecoder(name: () -> String) {

@@ -11,6 +11,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.annotations.CborSkip
 import net.orandja.obor.annotations.CborTag
+import net.orandja.obor.codec.CborDecoderException.*
 import net.orandja.obor.io.CborReader
 import net.orandja.obor.io.ExpandableArray
 import net.orandja.obor.io.ExpandableByteArray
@@ -126,17 +127,18 @@ internal class CborDecoder(
 
             StructureKind.MAP -> MAJOR_MAP
 
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidStructureKind(reader.totalRead(), descriptor)
         }
 
-        if (!(reader.peek() hasMajor major)) throw CborDecoderException.Default()
+        if (!(reader.peek() hasMajor major))
+            throw InvalidMajor(reader.totalRead(), reader.peek(), major, descriptor)
+
         setMajor(depth, major)
         setCollectionSize(depth, decodeCollectionSize(descriptor))
         return this
     }
 
     override fun endStructure(descriptor: SerialDescriptor) {
-        if (getCollectionSize(depth) == -1 && reader.peekConsume() != HEADER_BREAK) throw CborDecoderException.Default()
         clear(depth)
         depth--
     }
@@ -161,7 +163,7 @@ internal class CborDecoder(
         }
 
         val noTag = !(reader.peek() hasMajor MAJOR_TAG)
-        if (noTag && required) throw CborDecoderException.Default()
+        if (noTag && required) throw RequiredTagNotFound(reader.totalRead(), tag!!)
         if (noTag) return
         val sizeBits = reader.peekConsume() and SIZE_MASK
         val readTag: Long = when {
@@ -170,10 +172,10 @@ internal class CborDecoder(
             sizeBits == SIZE_16 -> reader.nextShort().toLong() and 0xFFFF
             sizeBits == SIZE_32 -> reader.nextInt().toLong() and 0xFFFFFFFF
             sizeBits == SIZE_64 -> reader.nextLong()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_64, false)
         }
-        if (tag != null && readTag != tag) throw CborDecoderException.Default()
-        return
+        if (tag != null && readTag != tag)
+            throw UnexpectedTag(reader.totalRead(), readTag, tag)
     }
 
     // endregion
@@ -230,12 +232,12 @@ internal class CborDecoder(
             sizeBits == SIZE_16 -> reader.nextShort().toInt() and 0xFFFF
             sizeBits == SIZE_32 -> {
                 val result = reader.nextInt()
-                if (result < 0) throw CborDecoderException.Default()
+                if (result < 0) throw CollectionSizeTooLarge(reader.totalRead(), result.toULong())
                 result
             }
 
             sizeBits == SIZE_INFINITE -> return -1
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_32, true)
         }
 
         // Map<*,*> requires double of the result size
@@ -328,14 +330,14 @@ internal class CborDecoder(
 
     override fun decodeNull(): Nothing? {
         return if (reader.peekConsume() == HEADER_NULL) null
-        else throw CborDecoderException.Default()
+        else throw FailedToDecodeElement(reader.totalRead(), "NULL ($HEADER_NULL)")
     }
 
     override fun decodeBoolean(): Boolean {
         return when (reader.peekConsume()) {
             HEADER_FALSE -> false
             HEADER_TRUE -> true
-            else -> throw CborDecoderException.Default()
+            else -> throw FailedToDecodeElement(reader.totalRead(), "TRUE, FALSE ($HEADER_TRUE, $HEADER_FALSE)")
         }
     }
 
@@ -343,7 +345,7 @@ internal class CborDecoder(
         return when (reader.peekConsume()) {
             HEADER_FLOAT_16 -> float16BitsToFloat32(reader.nextShort().toInt() and 0xFFFF)
             HEADER_FLOAT_32 -> Float.fromBits(reader.nextInt())
-            else -> throw CborDecoderException.Default()
+            else -> throw FailedToDecodeElement(reader.totalRead(), "FLOAT ($HEADER_FLOAT_16, $HEADER_FLOAT_32)")
         }
     }
 
@@ -352,7 +354,10 @@ internal class CborDecoder(
             HEADER_FLOAT_16 -> float16BitsToFloat32(reader.nextShort().toInt() and 0xFFFF).toDouble()
             HEADER_FLOAT_32 -> Float.fromBits(reader.nextInt()).toDouble()
             HEADER_FLOAT_64 -> Double.fromBits(reader.nextLong())
-            else -> throw CborDecoderException.Default()
+            else -> throw FailedToDecodeElement(
+                reader.totalRead(),
+                "DOUBLE ($HEADER_FLOAT_16, $HEADER_FLOAT_32, $HEADER_FLOAT_64)"
+            )
         }
     }
 
@@ -366,24 +371,26 @@ internal class CborDecoder(
         // Read next byte
         val header = reader.peekConsume()
         val major = header and MAJOR_MASK
-        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE) throw CborDecoderException.Default()
+        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE)
+            throw FailedToDecodeElement(reader.totalRead(), "BYTE (Majors: $MAJOR_POSITIVE, $MAJOR_NEGATIVE)")
         val size = header and SIZE_MASK
         return when {
             size < SIZE_8 -> if (major == MAJOR_NEGATIVE) size.xor(-1) else size
             size == SIZE_8 -> {
                 val result = reader.nextByte()
-                if (result < 0) throw CborDecoderException.Default()
+                if (result < 0) throw throw UnfitValue(reader.totalRead(), "Byte", result.toULong())
                 if (major == MAJOR_NEGATIVE) result.xor(-1) else result
             }
 
-            else -> throw CborDecoderException.Default()
+            else -> throw FailedToDecodeElement(reader.totalRead(), "BYTE (bits size should be <= $SIZE_8)")
         }
     }
 
     override fun decodeShort(): Short {
         val header = reader.peekConsume()
         val major = header and MAJOR_MASK
-        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE) throw CborDecoderException.Default()
+        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE)
+            throw FailedToDecodeElement(reader.totalRead(), "SHORT (Majors: $MAJOR_POSITIVE, $MAJOR_NEGATIVE)")
         val size = header and SIZE_MASK
         return when {
             size < SIZE_8 -> {
@@ -397,18 +404,19 @@ internal class CborDecoder(
 
             size == SIZE_16 -> {
                 val result = reader.nextShort()
-                if (result < 0) throw CborDecoderException.Default()
+                if (result < 0) throw UnfitValue(reader.totalRead(), "Short", result.toULong())
                 if (major == MAJOR_NEGATIVE) result.xor(-1) else result
             }
 
-            else -> throw CborDecoderException.Default()
+            else -> throw FailedToDecodeElement(reader.totalRead(), "SHORT (bits size should be <= $SIZE_16)")
         }
     }
 
     override fun decodeInt(): Int {
         val header = reader.peekConsume()
         val major = header and MAJOR_MASK
-        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE) throw CborDecoderException.Default()
+        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE)
+            throw FailedToDecodeElement(reader.totalRead(), "INT (Majors: $MAJOR_POSITIVE, $MAJOR_NEGATIVE)")
         val size = header and SIZE_MASK
         return when {
             size < SIZE_8 -> {
@@ -427,18 +435,19 @@ internal class CborDecoder(
 
             size == SIZE_32 -> {
                 val result = reader.nextInt()
-                if (result < 0) throw CborDecoderException.Default()
+                if (result < 0) throw UnfitValue(reader.totalRead(), "Int", result.toULong())
                 if (major == MAJOR_NEGATIVE) result.xor(-1) else result
             }
 
-            else -> throw CborDecoderException.Default()
+            else -> throw FailedToDecodeElement(reader.totalRead(), "INT (bits size should be <= $SIZE_32)")
         }
     }
 
     override fun decodeLong(): Long {
         val header = reader.peekConsume()
         val major = header and MAJOR_MASK
-        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE) throw CborDecoderException.Default()
+        if (major != MAJOR_POSITIVE && major != MAJOR_NEGATIVE)
+            throw FailedToDecodeElement(reader.totalRead(), "LONG (Majors: $MAJOR_POSITIVE, $MAJOR_NEGATIVE)")
         val size = header and SIZE_MASK
         return when {
             size < SIZE_8 -> {
@@ -462,22 +471,24 @@ internal class CborDecoder(
 
             size == SIZE_64 -> {
                 val result = reader.nextLong()
-                if (result < 0) throw CborDecoderException.Default()
+                if (result < 0) throw UnfitValue(reader.totalRead(), "Long", result.toULong())
                 if (major == MAJOR_NEGATIVE) result.xor(-1) else result
             }
 
-            else -> throw CborDecoderException.Default()
+            else -> throw FailedToDecodeElement(reader.totalRead(), "LONG (bits size should be <= $SIZE_64)")
         }
     }
 
     override fun decodeChar(): Char {
         val result = decodeString()
-        return if (result.length == 1) result[0] else throw CborDecoderException.Default()
+        return if (result.length == 1) result[0]
+        else throw FailedToDecodeElement(reader.totalRead(), "Tried to decode a single char but found '$result'")
     }
 
     override fun decodeString(): String {
         val header = reader.peek()
-        if (header and MAJOR_MASK != MAJOR_TEXT) throw CborDecoderException.Default()
+        if (header and MAJOR_MASK != MAJOR_TEXT)
+            throw FailedToDecodeElement(reader.totalRead(), "STRING (Majors: $MAJOR_TEXT)")
         val sizeBits = header and SIZE_MASK
         val size: Int = when {
             sizeBits < SIZE_8 -> sizeBits.toInt()
@@ -485,12 +496,12 @@ internal class CborDecoder(
             sizeBits == SIZE_16 -> reader.nextShort().toInt() and 0xFFFF
             sizeBits == SIZE_32 -> {
                 val result = reader.nextInt()
-                if (result < 0) throw CborDecoderException.Default()
+                if (result < 0) throw CollectionSizeTooLarge(reader.totalRead(), result.toULong())
                 result
             }
 
             sizeBits == SIZE_INFINITE -> return decodeStringInfinite()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_64, true)
         }
         reader.consume()
         return reader.readAsString(size)
@@ -516,7 +527,8 @@ internal class CborDecoder(
      */
     fun decodeBytes(): ByteArray {
         val header = reader.peek()
-        if (header and MAJOR_MASK != MAJOR_BYTE) throw CborDecoderException.Default()
+        if (header and MAJOR_MASK != MAJOR_BYTE)
+            throw FailedToDecodeElement(reader.totalRead(), "BYTEARRAY (Majors: $MAJOR_BYTE)")
         val sizeBits = header and SIZE_MASK
         val size: Int = when {
             sizeBits < SIZE_8 -> sizeBits.toInt()
@@ -524,12 +536,12 @@ internal class CborDecoder(
             sizeBits == SIZE_16 -> reader.nextShort().toInt() and 0xFFFF
             sizeBits == SIZE_32 -> {
                 val result = reader.nextInt()
-                if (result < 0) throw CborDecoderException.Default()
+                if (result < 0) throw CollectionSizeTooLarge(reader.totalRead(), result.toULong())
                 result
             }
 
             sizeBits == SIZE_INFINITE -> return decodeBytesInfinite()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_32, true)
         }
         reader.consume()
         return reader.read(size)
@@ -563,7 +575,7 @@ internal class CborDecoder(
         return when (val it = reader.peekConsume()) {
             in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toUByte()
             HEADER_POSITIVE_8 -> reader.nextByte().toUByte()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "UByte", it)
         }
     }
 
@@ -572,7 +584,7 @@ internal class CborDecoder(
             in (HEADER_POSITIVE_START until HEADER_POSITIVE_8) -> (it and SIZE_MASK).toUShort()
             HEADER_POSITIVE_8 -> reader.nextByte().toUByte().toUShort()
             HEADER_POSITIVE_16 -> reader.nextShort().toUShort()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "UShort", it)
         }
     }
 
@@ -582,7 +594,7 @@ internal class CborDecoder(
             HEADER_POSITIVE_8 -> reader.nextByte().toUByte().toUInt()
             HEADER_POSITIVE_16 -> reader.nextShort().toUShort().toUInt()
             HEADER_POSITIVE_32 -> reader.nextInt().toUInt()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "UInt", it)
         }
     }
 
@@ -594,7 +606,7 @@ internal class CborDecoder(
             HEADER_POSITIVE_32 -> reader.nextInt().toUInt().toULong()
             HEADER_POSITIVE_64 -> reader.nextLong().toULong()
 
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "ULong", it)
         }
     }
 
@@ -604,7 +616,7 @@ internal class CborDecoder(
         return when (val it = reader.peekConsume()) {
             in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUByte()
             HEADER_NEGATIVE_8 -> reader.nextByte().toUByte().toByte().toUByte()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "UByte", it)
         }
     }
 
@@ -613,7 +625,7 @@ internal class CborDecoder(
             in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUShort()
             HEADER_NEGATIVE_8 -> reader.nextByte().toUByte().toUShort()
             HEADER_NEGATIVE_16 -> reader.nextShort().toUShort()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "UShort", it)
         }
     }
 
@@ -623,7 +635,7 @@ internal class CborDecoder(
             HEADER_NEGATIVE_8 -> reader.nextByte().toUByte().toUInt()
             HEADER_NEGATIVE_16 -> reader.nextShort().toUShort().toUInt()
             HEADER_NEGATIVE_32 -> reader.nextInt().toUInt()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "UInt", it)
         }
     }
 
@@ -635,7 +647,7 @@ internal class CborDecoder(
             HEADER_NEGATIVE_32 -> reader.nextInt().toUInt().toULong()
             HEADER_NEGATIVE_64 -> reader.nextLong().toULong()
 
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidUnsignedValue(reader.totalRead(), "ULong", it)
         }
     }
 
@@ -674,7 +686,7 @@ internal class CborDecoder(
             (peek and SIZE_32) == SIZE_32 -> reader.nextInt().toUInt().toULong()
             (peek and SIZE_64) == SIZE_64 -> reader.nextLong().toULong()
             (peek and (MAJOR_MASK xor BYTE_FF) < SIZE_8) -> (peek and (MAJOR_MASK xor BYTE_FF)).toULong()
-            else -> throw CborDecoderException.Default()
+            else -> throw InvalidSizeElement(reader.totalRead(), peek and SIZE_MASK, SIZE_64, false)
         }
     }
 

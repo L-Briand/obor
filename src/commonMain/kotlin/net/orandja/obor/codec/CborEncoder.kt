@@ -141,8 +141,9 @@ internal class CborEncoder(
                 }
 
                 hasFlag(depth - 1, RAW_BYTES) || hasFlag(depth, RAW_BYTES) -> {
-                    if (descriptor.getElementDescriptor(0).kind !is PrimitiveKind.BYTE)
-                        error("${CborRawBytes::class.simpleName} annotation applied on an invalid field. It should be a List<Byte> or equivalent")
+                    if (descriptor.getElementDescriptor(0).kind !is PrimitiveKind.BYTE) throw CborEncoderException(
+                        "${CborRawBytes::class.simpleName} annotation applied on an invalid field. It should be a List<Byte> or equivalent"
+                    )
                     if (hasFlag(depth - 1, INFINITE)) {
                         this.collectionSize = -1
                         setFlag(depth, TAG_INFINITE)
@@ -159,7 +160,7 @@ internal class CborEncoder(
                 setFlag(depth, STRUCTURE)
             }
 
-            else -> throw IllegalStateException("Try to encode a ${descriptor.kind} but SerialDescriptor isn't a StructureKind")
+            else -> throw CborEncoderException("Try to encode collection but SerialDescriptor (Descriptor: ${descriptor}, Kind: ${descriptor.kind}) isn't a StructureKind")
         }
         if (this.collectionSize < 0) writer.write(header or SIZE_INFINITE)
         else startCollection(descriptor)
@@ -194,7 +195,9 @@ internal class CborEncoder(
                 descriptor is ListStringsDescriptor -> header = MAJOR_TEXT
                 hasFlag(depth - 1, RAW_BYTES) || hasFlag(depth, RAW_BYTES) -> {
                     if (!(descriptor.kind is StructureKind.LIST && descriptor.getElementDescriptor(0).kind is PrimitiveKind.BYTE))
-                        error("${CborRawBytes::class.simpleName} annotation applied on an invalid field. It should be a List<Byte> or equivalent")
+                        throw CborEncoderException(
+                            "${CborRawBytes::class.simpleName} annotation applied on an invalid field. It should be a List<Byte> or equivalent"
+                        )
                     header = MAJOR_BYTE
                 }
 
@@ -202,7 +205,7 @@ internal class CborEncoder(
             }
 
             is StructureKind.MAP -> header = MAJOR_MAP
-            else -> throw IllegalStateException("Try to encode a ${descriptor.kind} but SerialDescriptor isn't a StructureKind")
+            else -> throw CborEncoderException("Try to encode collection but SerialDescriptor (Descriptor: ${descriptor}, Kind: ${descriptor.kind}) isn't a StructureKind")
         }
 
         setFlag(depth, INFINITE)

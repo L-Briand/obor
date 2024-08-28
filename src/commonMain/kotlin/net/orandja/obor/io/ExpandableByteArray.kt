@@ -12,6 +12,7 @@ class ExpandableByteArray(initialCapacity: Int = 64) : ExpandableArray<Byte, Byt
         array = newArray
     }
 
+
     override fun write(value: Byte) {
         ensureCapacity(1)
         array[size] = value
@@ -20,7 +21,7 @@ class ExpandableByteArray(initialCapacity: Int = 64) : ExpandableArray<Byte, Byt
 
     override fun write(array: ByteArray, offset: Int, count: Int) {
         if (count == 0) return
-        if (count !in 0..array.size || count + offset !in 0..array.size) throw IndexOutOfBoundsException(
+        if (count !in 0..array.size || count + offset !in 0..array.size) throw WriterException(
             "Requested array range is out of range. Range is ${0..array.size} Requested is ${count..<count + offset}"
         )
 

@@ -1,11 +1,6 @@
 package net.orandja.obor.io
 
 import net.orandja.obor.codec.*
-import net.orandja.obor.codec.SIZE_16
-import net.orandja.obor.codec.SIZE_32
-import net.orandja.obor.codec.SIZE_64
-import net.orandja.obor.codec.SIZE_8
-import net.orandja.obor.codec.SIZE_MASK
 import kotlin.experimental.and
 import kotlin.experimental.or
 

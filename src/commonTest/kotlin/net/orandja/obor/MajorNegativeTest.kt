@@ -62,7 +62,7 @@ class MajorNegativeTest {
 
     @Test
     fun size8() {
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Byte.serializer(), CBOR_SIZE_8)
         }
         assertTransformation(CBOR_SIZE_8, SIZE_8)
@@ -76,10 +76,10 @@ class MajorNegativeTest {
 
     @Test
     fun size16() {
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Byte.serializer(), CBOR_SIZE_16)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Short.serializer(), CBOR_SIZE_16)
         }
         assertTransformation(CBOR_SIZE_16, SIZE_16)
@@ -92,13 +92,13 @@ class MajorNegativeTest {
 
     @Test
     fun size32() {
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Byte.serializer(), CBOR_SIZE_32)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Short.serializer(), CBOR_SIZE_32)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Int.serializer(), CBOR_SIZE_32)
         }
         assertTransformation(CBOR_SIZE_32, SIZE_32)
@@ -109,13 +109,13 @@ class MajorNegativeTest {
 
     @Test
     fun size64() {
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Byte.serializer(), CBOR_SIZE_64)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Short.serializer(), CBOR_SIZE_64)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Int.serializer(), CBOR_SIZE_64)
         }
         assertTransformation(CBOR_SIZE_64, SIZE_64)
@@ -124,16 +124,16 @@ class MajorNegativeTest {
 
     @Test
     fun limit() {
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Byte.serializer(), CBOR_LIMIT)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Short.serializer(), CBOR_LIMIT)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Int.serializer(), CBOR_LIMIT)
         }
-        assertFailsWith(CborDecoderException.Default::class) {
+        assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Long.serializer(), CBOR_LIMIT)
         }
         assertTransformation(CBOR_LIMIT, ULIMIT, CborUnsignedSerializer.ULongNeg)
