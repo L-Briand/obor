@@ -8,6 +8,7 @@ import kotlinx.serialization.SerialInfo
  * Can be applied to any structure kind: Object, Class, List, Map, Array, etc.
  *
  * This annotation has no effect on deserialization.
+ * TODO: Example
  */
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo

@@ -5,6 +5,7 @@ import kotlinx.serialization.SerialInfo
 
 /**
  * Annotate a field with it to skip serialization.
+ * TODO: Example
  */
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo

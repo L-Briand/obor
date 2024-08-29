@@ -7,12 +7,9 @@ import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.StructureKind
 import kotlinx.serialization.encoding.CompositeEncoder
 import kotlinx.serialization.encoding.Encoder
-import kotlinx.serialization.encoding.encodeStructure
+import kotlinx.serialization.encoding.encodeCollection
 import kotlinx.serialization.modules.SerializersModule
-import net.orandja.obor.annotations.CborInfinite
-import net.orandja.obor.annotations.CborRawBytes
-import net.orandja.obor.annotations.CborSkip
-import net.orandja.obor.annotations.CborTag
+import net.orandja.obor.annotations.*
 import net.orandja.obor.io.CborWriter
 import net.orandja.obor.io.ExpandableArray
 import net.orandja.obor.io.ExpandableByteArray
@@ -30,19 +27,22 @@ import kotlin.experimental.xor
 @OptIn(ExperimentalSerializationApi::class)
 internal class CborEncoder(
     private val writer: CborWriter,
-    override val serializersModule: SerializersModule
+    configuration: Cbor.Configuration,
 ) : Encoder, CompositeEncoder {
+
+    override val serializersModule: SerializersModule = configuration.serializersModule
 
     // region Tracker
 
     companion object {
         // Metadata of each element inside the tracker array
         // @formatter:off
-        private const val INFINITE     = 0b00001.toByte() // annotated with @CborInfinite
-        private const val RAW_BYTES    = 0b00010.toByte() // annotated with @CborRawBytes
-        private const val STRUCTURE    = 0b00100.toByte() // Class is a structure
-        private const val INLINE       = 0b01000.toByte() // Class is value class
-        private const val TAG_INFINITE = 0b10000.toByte() // Class marked infinite but not infinite itself
+        private const val INFINITE     = 0b000001.toByte() // annotated with @CborInfinite
+        private const val RAW_BYTES    = 0b000010.toByte() // annotated with @CborRawBytes
+        private const val STRUCTURE    = 0b000100.toByte() // Class is a structure
+        private const val INLINE       = 0b001000.toByte() // Class is value class
+        private const val TAG_INFINITE = 0b010000.toByte() // Class marked infinite but not infinite itself
+        private const val TUPLE        = 0b100000.toByte() // Class becomes a list with different types inside
         // @formatter:on
     }
 
@@ -93,6 +93,7 @@ internal class CborEncoder(
             is CborTag -> writer.writeMajor64(MAJOR_TAG, annotation.tag)
             is CborInfinite -> setFlag(depth, INFINITE)
             is CborRawBytes -> setFlag(depth, RAW_BYTES)
+            is CborTuple -> setFlag(depth, TUPLE)
         }
     }
 
@@ -155,10 +156,6 @@ internal class CborEncoder(
             }
 
             is StructureKind.MAP -> header = MAJOR_MAP
-            is StructureKind.CLASS, is StructureKind.OBJECT -> {
-                header = MAJOR_MAP
-                setFlag(depth, STRUCTURE)
-            }
 
             else -> throw CborEncoderException("Try to encode collection but SerialDescriptor (Descriptor: ${descriptor}, Kind: ${descriptor.kind}) isn't a StructureKind")
         }
@@ -175,41 +172,21 @@ internal class CborEncoder(
             ensureCapacity(1)
             depth++
         }
-        when (descriptor.kind) {
-            is StructureKind.CLASS, is StructureKind.OBJECT -> {
-                header = MAJOR_MAP
-                setFlag(depth, STRUCTURE)
-                // we check for metadata on depth - 1 because it might be something like class Foo(@CborInfinite val bytes: MyClass)
-                if (hasFlag(depth - 1, INFINITE)) {
-                    setFlag(depth, TAG_INFINITE)
-                    writer.write(header or SIZE_INFINITE)
-                } else {
-                    collectionSize = descriptor.elementsCount
-                    startCollection(descriptor)
-                }
-                return this
-            }
 
-            is StructureKind.LIST -> when {
-                descriptor is ByteArrayDescriptor || descriptor is ListBytesDescriptor -> header = MAJOR_BYTE
-                descriptor is ListStringsDescriptor -> header = MAJOR_TEXT
-                hasFlag(depth - 1, RAW_BYTES) || hasFlag(depth, RAW_BYTES) -> {
-                    if (!(descriptor.kind is StructureKind.LIST && descriptor.getElementDescriptor(0).kind is PrimitiveKind.BYTE))
-                        throw CborEncoderException(
-                            "${CborRawBytes::class.simpleName} annotation applied on an invalid field. It should be a List<Byte> or equivalent"
-                        )
-                    header = MAJOR_BYTE
-                }
+        if (descriptor.kind !is StructureKind.CLASS && descriptor.kind !is StructureKind.OBJECT)
+            throw CborEncoderException("Try to encode collection but SerialDescriptor (Descriptor: ${descriptor}, Kind: ${descriptor.kind}) != StructureKind.CLASS or StructureKind.OBJECT")
 
-                else -> header = MAJOR_ARRAY
-            }
+        header = if (hasFlag(depth - 1, TUPLE)) MAJOR_ARRAY else MAJOR_MAP
+        setFlag(depth, STRUCTURE)
 
-            is StructureKind.MAP -> header = MAJOR_MAP
-            else -> throw CborEncoderException("Try to encode collection but SerialDescriptor (Descriptor: ${descriptor}, Kind: ${descriptor.kind}) isn't a StructureKind")
+        // we check for metadata on depth - 1 because it might be something like class Foo(@CborInfinite val bytes: MyClass)
+        if (hasFlag(depth - 1, INFINITE)) {
+            setFlag(depth, TAG_INFINITE)
+            writer.write(header or SIZE_INFINITE)
+        } else {
+            collectionSize = descriptor.elementsCount
+            startCollection(descriptor)
         }
-
-        setFlag(depth, INFINITE)
-        writer.write(header or SIZE_INFINITE)
         return this
     }
 
@@ -236,7 +213,9 @@ internal class CborEncoder(
     }
 
     private inline fun encodeElement(descriptor: SerialDescriptor, index: Int, block: () -> Unit) {
-        if (hasFlag(depth, STRUCTURE)) encodeRawString(descriptor.getElementName(index).encodeToByteArray())
+        if (hasFlag(depth, STRUCTURE) && !hasFlag(depth - 1, TUPLE))
+            encodeRawString(descriptor.getElementName(index).encodeToByteArray())
+
         ensureCapacity(1)
         depth++
         updateTrackerWithAnnotations(descriptor.getElementAnnotations(index))
@@ -420,7 +399,7 @@ internal class CborEncoder(
 
     private fun encodeStringInfinite(value: String) {
         val descriptor = ListStringsDescriptor(name(CborEncoder::class))
-        encodeStructure(descriptor) {
+        encodeCollection(descriptor, if (value.length % 255 == 0) value.length / 255 else (value.length / 255) + 1) {
             for (item in value.chunkedSequence(255)) {
                 // Force raw encoding instead of using encodeStringElement.
                 // If not, it can result in infinite string encoded in infinite string

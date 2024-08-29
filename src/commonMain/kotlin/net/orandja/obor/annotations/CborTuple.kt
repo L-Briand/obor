@@ -4,10 +4,10 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialInfo
 
 /**
- * Annotate Array<Byte> or List<Byte> to serialize it with Major 2 (BYTE)
+ * Annotate a Class or object to serialize it as a list.
  * TODO: Example
  */
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo
-@Target(AnnotationTarget.PROPERTY)
-annotation class CborRawBytes
+@Target(AnnotationTarget.CLASS)
+annotation class CborTuple

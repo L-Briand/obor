@@ -50,4 +50,8 @@ sealed class CborDecoderException(
         index,
         "Tried to decode '$name' but read header (Major: ${header and MAJOR_MASK}, Size: ${header and SIZE_MASK})"
     )
+
+    class ClassUnknownKey(index: Long, key: String, descriptor: SerialDescriptor) : CborDecoderException(
+        index, "An unknown key was found while deserializing. (Name: $key, descriptor: $descriptor)"
+    )
 }

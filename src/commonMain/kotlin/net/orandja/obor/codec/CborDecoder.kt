@@ -11,6 +11,7 @@ import kotlinx.serialization.encoding.decodeStructure
 import kotlinx.serialization.modules.SerializersModule
 import net.orandja.obor.annotations.CborSkip
 import net.orandja.obor.annotations.CborTag
+import net.orandja.obor.annotations.CborTuple
 import net.orandja.obor.codec.CborDecoderException.*
 import net.orandja.obor.io.CborReader
 import net.orandja.obor.io.ExpandableArray
@@ -28,8 +29,10 @@ import kotlin.experimental.xor
 @OptIn(ExperimentalSerializationApi::class)
 internal class CborDecoder(
     private val reader: CborReader,
-    override val serializersModule: SerializersModule,
+    private val configuration: Cbor.Configuration,
 ) : Decoder, CompositeDecoder {
+
+    override val serializersModule: SerializersModule = configuration.serializersModule
 
     // region Tracker
 
@@ -41,8 +44,9 @@ internal class CborDecoder(
 
     companion object {
         // @formatter:off
-        private const val INLINE    = 0b01
-        private const val STRUCTURE = 0b10
+        private const val INLINE    = 0b001 // Class is inline
+        private const val STRUCTURE = 0b010 // Class is structure
+        private const val TUPLE     = 0b100 // Class serialized as list
         // @formatter:on
     }
 
@@ -108,14 +112,18 @@ internal class CborDecoder(
             depth++
         }
 
-        val major = when (descriptor.kind) {
+        var major: Byte = MAJOR_MAP
+        when (descriptor.kind) {
             StructureKind.CLASS, StructureKind.OBJECT -> {
                 setFlag(depth, STRUCTURE)
-                MAJOR_MAP
+                for (annotation in descriptor.annotations) if (annotation is CborTuple) {
+                    setFlag(depth, TUPLE)
+                    major = MAJOR_ARRAY
+                }
             }
 
             StructureKind.LIST -> {
-                when {
+                major = when {
                     descriptor is ByteArrayDescriptor || descriptor is ListBytesDescriptor -> MAJOR_BYTE
                     descriptor is ListStringsDescriptor -> MAJOR_TEXT
                     descriptor.getElementDescriptor(0).kind is PrimitiveKind.BYTE
@@ -125,7 +133,7 @@ internal class CborDecoder(
                 }
             }
 
-            StructureKind.MAP -> MAJOR_MAP
+            StructureKind.MAP -> Unit
 
             else -> throw InvalidStructureKind(reader.totalRead(), descriptor)
         }
@@ -184,13 +192,13 @@ internal class CborDecoder(
 
     override fun decodeElementIndex(descriptor: SerialDescriptor): Int {
         if (isCollectionDone()) return CompositeDecoder.DECODE_DONE
-        if (hasFlag(depth, STRUCTURE)) return decodeStructureElementIndex(descriptor)
+        if (hasFlag(depth, STRUCTURE) && !hasFlag(depth, TUPLE)) return decodeStructureElementIndex(descriptor)
         val index = getIndex(depth)
         setIndex(depth, index + 1)
         return index
     }
 
-    private inline fun isCollectionDone(): Boolean {
+    private fun isCollectionDone(): Boolean {
         val collectionSize = getCollectionSize(depth)
         val infinite = collectionSize == -1
         return (!infinite && getIndex(depth) == collectionSize) || (infinite && reader.peek() == HEADER_BREAK)
@@ -200,17 +208,20 @@ internal class CborDecoder(
         // - Decoded element not inside the kotlin object representation
         // - Element is explicitly skipped
         while (true) {
-            val index = descriptor.getElementIndex(decodeString())
-            val annotations = descriptor.getElementAnnotations(index)
+            val name = decodeString()
+            val index = descriptor.getElementIndex(name)
+            setIndex(depth, getIndex(depth) + 1)
 
-            val skipped = annotations.any { it is CborSkip }
-            if (!skipped && index != CompositeDecoder.UNKNOWN_NAME) { // element is not unknown
-                setIndex(depth, getIndex(depth) + 1)
-                return index
+            if (index == CompositeDecoder.UNKNOWN_NAME) {
+                if (!configuration.ignoreUnknownKeys) throw ClassUnknownKey(reader.totalRead(), name, descriptor)
+                skipElement()
+                if (isCollectionDone()) return CompositeDecoder.DECODE_DONE
+                else continue
             }
 
-            if (skipped) setIndex(depth, getIndex(depth) + 1) // only skipped field should increment internal index
-            // else TODO: ignoreUnknownKeys
+            val annotations = descriptor.getElementAnnotations(index)
+            val skipped = annotations.any { it is CborSkip }
+            if (!skipped) return index
 
             skipElement()
             if (isCollectionDone()) return CompositeDecoder.DECODE_DONE
@@ -241,7 +252,8 @@ internal class CborDecoder(
         }
 
         // Map<*,*> requires double of the result size
-        return if (getMajor(depth) == MAJOR_MAP && !hasFlag(depth, STRUCTURE)) result * 2 else result
+        return if (getMajor(depth) == MAJOR_MAP && !hasFlag(depth, TUPLE) && !hasFlag(depth, STRUCTURE)) result * 2
+        else result
     }
 
     override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int): Boolean {
