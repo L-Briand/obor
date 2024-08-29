@@ -1,8 +1,6 @@
 package net.orandja.obor
 
-import kotlinx.serialization.serializer
 import kotlin.test.Test
-import kotlin.test.assertContentEquals
 
 class FloatingPointTests {
     companion object {

@@ -11,7 +11,8 @@ import kotlin.experimental.or
  * Implementation of [CborWriter] specific to [ExpandableByteArray] as receiver.
  * If you want to quickly create a [CborWriter] use [CborWriter.ByWriter] with [Writer.OfByteArray]
  */
-internal class CborWriterExpandableByteArray(private val vector: ExpandableByteArray) : CborWriter, Writer<Byte, ByteArray> by vector {
+internal class CborWriterExpandableByteArray(private val vector: ExpandableByteArray) : CborWriter,
+    Writer<Byte, ByteArray> by vector {
 
     companion object {
         private const val SHORT_BYTE_MASK = 0xFF_00.toShort()

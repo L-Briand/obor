@@ -9,11 +9,8 @@ import kotlinx.serialization.modules.SerializersModule
 @OptIn(ExperimentalSerializationApi::class)
 internal object CborEncoderNoOp : AbstractEncoder() {
     override val serializersModule: SerializersModule = EmptySerializersModule()
-
-    public override fun encodeValue(value: Any): Unit = Unit
-
+    override fun encodeValue(value: Any): Unit = Unit
     override fun encodeNull(): Unit = Unit
-
     override fun encodeBoolean(value: Boolean): Unit = Unit
     override fun encodeByte(value: Byte): Unit = Unit
     override fun encodeShort(value: Short): Unit = Unit

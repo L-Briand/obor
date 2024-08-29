@@ -5,9 +5,9 @@ import kotlinx.serialization.serializer
 import net.orandja.obor.codec.Cbor
 import net.orandja.obor.codec.HEADER_BREAK
 import net.orandja.obor.codec.SIZE_INFINITE
-import net.orandja.obor.io.ExpandableByteArray
-import net.orandja.obor.io.CborWriterExpandableByteArray
 import net.orandja.obor.io.CborWriter
+import net.orandja.obor.io.CborWriterExpandableByteArray
+import net.orandja.obor.io.ExpandableByteArray
 import kotlin.experimental.or
 import kotlin.math.ceil
 import kotlin.test.assertContentEquals
