@@ -4,7 +4,7 @@ import net.orandja.obor.codec.*
 import kotlin.experimental.and
 import kotlin.experimental.or
 
-interface CborWriter : Writer<Byte, ByteArray> {
+interface CborWriter : ByteWriter {
     // writeMajor -> fit into a smaller header if there is room for it.
     // writeHeader -> write the header + value as it.
     fun writeMajor8(major: Byte, value: Byte)
@@ -17,7 +17,7 @@ interface CborWriter : Writer<Byte, ByteArray> {
     fun writeHeader64(header: Byte, value: Long)
 
     /** Use this class to quickly write a CborWriter. */
-    open class ByWriter(writer: Writer<Byte, ByteArray>) : CborWriter, Writer<Byte, ByteArray> by writer {
+    open class ByWriter(writer: ByteWriter) : CborWriter, ByteWriter by writer {
 
         companion object {
             private const val SHORT_BYTE_MASK = 0xFF_00.toShort()

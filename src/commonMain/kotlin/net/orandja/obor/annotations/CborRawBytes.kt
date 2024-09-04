@@ -4,8 +4,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialInfo
 
 /**
- * Annotate Array<Byte> or List<Byte> to serialize it with Major 2 (BYTE)
- * TODO: Example
+ * Annotate ByteArray, Array<Byte>, List<Byte> or any list like of bytes to serialize it with Major 2 (BYTE)
  */
 @OptIn(ExperimentalSerializationApi::class)
 @SerialInfo

@@ -11,32 +11,32 @@ class MajorArrayTest {
     companion object {
         val INT_EMPTY = Array(0) { 0 }
         val CBOR_INT_EMPTY = buildSize(MAJOR_ARRAY, 0)
-        val CBOR_INT_EMPTY_INFINITE = buildInfinite(MAJOR_ARRAY, 0) { write(0) }
+        val CBOR_INT_EMPTY_INDEFINITE = buildIndefinite(MAJOR_ARRAY, 0) { write(0) }
 
 
         val INT_ONE = Array(1) { 0 }
         val CBOR_INT_ONE = buildSize(MAJOR_ARRAY, 1)
-        val CBOR_INT_ONE_INFINITE = buildInfinite(MAJOR_ARRAY, 1) { write(0) }
+        val CBOR_INT_ONE_INDEFINITE = buildIndefinite(MAJOR_ARRAY, 1) { write(0) }
 
 
         val INT_MAX_SIZE0 = Array(0x17) { 0 }
         val CBOR_INT_MAX_SIZE0 = buildSize(MAJOR_ARRAY, 0x17)
-        val CBOR_INT_MAX_SIZE0_INFINITE = buildInfinite(MAJOR_ARRAY, 0x17) { write(0) }
+        val CBOR_INT_MAX_SIZE0_INDEFINITE = buildIndefinite(MAJOR_ARRAY, 0x17) { write(0) }
 
 
         val INT_MIN_SIZE8 = Array(0x18) { 0 }
         val CBOR_INT_MIN_SIZE8 = buildSize(MAJOR_ARRAY, 0x18)
-        val CBOR_INT_MIN_SIZE8_INFINITE = buildInfinite(MAJOR_ARRAY, 0x18) { write(0) }
+        val CBOR_INT_MIN_SIZE8_INDEFINITE = buildIndefinite(MAJOR_ARRAY, 0x18) { write(0) }
 
 
         val INT_MAX_SIZE8 = Array(0xFF) { 0 }
         val CBOR_INT_MAX_SIZE8 = buildSize(MAJOR_ARRAY, 0xFF)
-        val CBOR_INT_MAX_SIZE8_INFINITE = buildInfinite(MAJOR_ARRAY, 0xFF) { write(0) }
+        val CBOR_INT_MAX_SIZE8_INDEFINITE = buildIndefinite(MAJOR_ARRAY, 0xFF) { write(0) }
 
 
         val INT_MIN_SIZE16 = Array(0x100) { 0 }
         val CBOR_INT_MIN_SIZE16 = buildSize(MAJOR_ARRAY, 0x100)
-        val CBOR_INT_MIN_SIZE16_INFINITE = buildInfinite(MAJOR_ARRAY, 0x100) { write(0) }
+        val CBOR_INT_MIN_SIZE16_INDEFINITE = buildIndefinite(MAJOR_ARRAY, 0x100) { write(0) }
 
 
         val PRIMITIVE_BOOLEAN = BooleanArray(1) { false }
@@ -88,65 +88,65 @@ class MajorArrayTest {
     }
 
     @Test
-    fun arrayInfinite() {
+    fun arrayIndefinite() {
         assertContentEquals(
-            Infinite(INT_EMPTY).array,
-            (CBOR_INT_EMPTY_INFINITE decodeCbor serializer<Infinite<Array<Int>>>()).array
+            Indefinite(INT_EMPTY).array,
+            (CBOR_INT_EMPTY_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
         )
-        assertContentEquals(CBOR_INT_EMPTY_INFINITE, Infinite(INT_EMPTY) encodeCbor serializer<Infinite<Array<Int>>>())
+        assertContentEquals(CBOR_INT_EMPTY_INDEFINITE, Indefinite(INT_EMPTY) encodeCbor serializer<Indefinite<Array<Int>>>())
 
         assertContentEquals(
-            Infinite(INT_ONE).array,
-            (CBOR_INT_ONE_INFINITE decodeCbor serializer<Infinite<Array<Int>>>()).array
+            Indefinite(INT_ONE).array,
+            (CBOR_INT_ONE_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
         )
-        assertContentEquals(CBOR_INT_ONE_INFINITE, Infinite(INT_ONE) encodeCbor serializer<Infinite<Array<Int>>>())
+        assertContentEquals(CBOR_INT_ONE_INDEFINITE, Indefinite(INT_ONE) encodeCbor serializer<Indefinite<Array<Int>>>())
 
         assertContentEquals(
-            Infinite(INT_MAX_SIZE0).array,
-            (CBOR_INT_MAX_SIZE0_INFINITE decodeCbor serializer<Infinite<Array<Int>>>()).array
+            Indefinite(INT_MAX_SIZE0).array,
+            (CBOR_INT_MAX_SIZE0_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_MAX_SIZE0_INFINITE,
-            Infinite(INT_MAX_SIZE0) encodeCbor serializer<Infinite<Array<Int>>>()
-        )
-
-        assertContentEquals(
-            Infinite(INT_MIN_SIZE8).array,
-            (CBOR_INT_MIN_SIZE8_INFINITE decodeCbor serializer<Infinite<Array<Int>>>()).array
-        )
-        assertContentEquals(
-            CBOR_INT_MIN_SIZE8_INFINITE,
-            Infinite(INT_MIN_SIZE8) encodeCbor serializer<Infinite<Array<Int>>>()
+            CBOR_INT_MAX_SIZE0_INDEFINITE,
+            Indefinite(INT_MAX_SIZE0) encodeCbor serializer<Indefinite<Array<Int>>>()
         )
 
         assertContentEquals(
-            Infinite(INT_MAX_SIZE8).array,
-            (CBOR_INT_MAX_SIZE8_INFINITE decodeCbor serializer<Infinite<Array<Int>>>()).array
+            Indefinite(INT_MIN_SIZE8).array,
+            (CBOR_INT_MIN_SIZE8_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_MAX_SIZE8_INFINITE,
-            Infinite(INT_MAX_SIZE8) encodeCbor serializer<Infinite<Array<Int>>>()
+            CBOR_INT_MIN_SIZE8_INDEFINITE,
+            Indefinite(INT_MIN_SIZE8) encodeCbor serializer<Indefinite<Array<Int>>>()
         )
 
         assertContentEquals(
-            Infinite(INT_MIN_SIZE16).array,
-            (CBOR_INT_MIN_SIZE16_INFINITE decodeCbor serializer<Infinite<Array<Int>>>()).array
+            Indefinite(INT_MAX_SIZE8).array,
+            (CBOR_INT_MAX_SIZE8_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_MIN_SIZE16_INFINITE,
-            Infinite(INT_MIN_SIZE16) encodeCbor serializer<Infinite<Array<Int>>>()
+            CBOR_INT_MAX_SIZE8_INDEFINITE,
+            Indefinite(INT_MAX_SIZE8) encodeCbor serializer<Indefinite<Array<Int>>>()
+        )
+
+        assertContentEquals(
+            Indefinite(INT_MIN_SIZE16).array,
+            (CBOR_INT_MIN_SIZE16_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
+        )
+        assertContentEquals(
+            CBOR_INT_MIN_SIZE16_INDEFINITE,
+            Indefinite(INT_MIN_SIZE16) encodeCbor serializer<Indefinite<Array<Int>>>()
         )
 
     }
 
     @Test
-    fun decodeArrayInfiniteWithArraySerializer() {
-        assertContentEquals(INT_EMPTY, CBOR_INT_EMPTY_INFINITE decodeCbor serializer())
-        assertContentEquals(INT_ONE, CBOR_INT_ONE_INFINITE decodeCbor serializer())
-        assertContentEquals(INT_MAX_SIZE0, CBOR_INT_MAX_SIZE0_INFINITE decodeCbor serializer())
-        assertContentEquals(INT_MIN_SIZE8, CBOR_INT_MIN_SIZE8_INFINITE decodeCbor serializer())
-        assertContentEquals(INT_MAX_SIZE8, CBOR_INT_MAX_SIZE8_INFINITE decodeCbor serializer())
-        assertContentEquals(INT_MIN_SIZE16, CBOR_INT_MIN_SIZE16_INFINITE decodeCbor serializer())
+    fun decodeArrayIndefiniteWithArraySerializer() {
+        assertContentEquals(INT_EMPTY, CBOR_INT_EMPTY_INDEFINITE decodeCbor serializer())
+        assertContentEquals(INT_ONE, CBOR_INT_ONE_INDEFINITE decodeCbor serializer())
+        assertContentEquals(INT_MAX_SIZE0, CBOR_INT_MAX_SIZE0_INDEFINITE decodeCbor serializer())
+        assertContentEquals(INT_MIN_SIZE8, CBOR_INT_MIN_SIZE8_INDEFINITE decodeCbor serializer())
+        assertContentEquals(INT_MAX_SIZE8, CBOR_INT_MAX_SIZE8_INDEFINITE decodeCbor serializer())
+        assertContentEquals(INT_MIN_SIZE16, CBOR_INT_MIN_SIZE16_INDEFINITE decodeCbor serializer())
     }
 
     @Test
@@ -171,71 +171,71 @@ class MajorArrayTest {
     }
 
     @Test
-    fun listInfinite() {
+    fun listIndefinite() {
         assertEquals(
-            Infinite(INT_EMPTY.toList()).array,
-            (CBOR_INT_EMPTY_INFINITE decodeCbor serializer<Infinite<List<Int>>>()).array
+            Indefinite(INT_EMPTY.toList()).array,
+            (CBOR_INT_EMPTY_INDEFINITE decodeCbor serializer<Indefinite<List<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_EMPTY_INFINITE,
-            Infinite(INT_EMPTY.toList()) encodeCbor serializer<Infinite<List<Int>>>()
+            CBOR_INT_EMPTY_INDEFINITE,
+            Indefinite(INT_EMPTY.toList()) encodeCbor serializer<Indefinite<List<Int>>>()
         )
 
         assertEquals(
-            Infinite(INT_ONE.toList()).array,
-            (CBOR_INT_ONE_INFINITE decodeCbor serializer<Infinite<List<Int>>>()).array
+            Indefinite(INT_ONE.toList()).array,
+            (CBOR_INT_ONE_INDEFINITE decodeCbor serializer<Indefinite<List<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_ONE_INFINITE,
-            Infinite(INT_ONE.toList()) encodeCbor serializer<Infinite<List<Int>>>()
+            CBOR_INT_ONE_INDEFINITE,
+            Indefinite(INT_ONE.toList()) encodeCbor serializer<Indefinite<List<Int>>>()
         )
 
         assertEquals(
-            Infinite(INT_MAX_SIZE0.toList()).array,
-            (CBOR_INT_MAX_SIZE0_INFINITE decodeCbor serializer<Infinite<List<Int>>>()).array
+            Indefinite(INT_MAX_SIZE0.toList()).array,
+            (CBOR_INT_MAX_SIZE0_INDEFINITE decodeCbor serializer<Indefinite<List<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_MAX_SIZE0_INFINITE,
-            Infinite(INT_MAX_SIZE0.toList()) encodeCbor serializer<Infinite<List<Int>>>()
+            CBOR_INT_MAX_SIZE0_INDEFINITE,
+            Indefinite(INT_MAX_SIZE0.toList()) encodeCbor serializer<Indefinite<List<Int>>>()
         )
 
         assertEquals(
-            Infinite(INT_MIN_SIZE8.toList()).array,
-            (CBOR_INT_MIN_SIZE8_INFINITE decodeCbor serializer<Infinite<List<Int>>>()).array
+            Indefinite(INT_MIN_SIZE8.toList()).array,
+            (CBOR_INT_MIN_SIZE8_INDEFINITE decodeCbor serializer<Indefinite<List<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_MIN_SIZE8_INFINITE,
-            Infinite(INT_MIN_SIZE8.toList()) encodeCbor serializer<Infinite<List<Int>>>()
+            CBOR_INT_MIN_SIZE8_INDEFINITE,
+            Indefinite(INT_MIN_SIZE8.toList()) encodeCbor serializer<Indefinite<List<Int>>>()
         )
 
         assertEquals(
-            Infinite(INT_MAX_SIZE8.toList()).array,
-            (CBOR_INT_MAX_SIZE8_INFINITE decodeCbor serializer<Infinite<List<Int>>>()).array
+            Indefinite(INT_MAX_SIZE8.toList()).array,
+            (CBOR_INT_MAX_SIZE8_INDEFINITE decodeCbor serializer<Indefinite<List<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_MAX_SIZE8_INFINITE,
-            Infinite(INT_MAX_SIZE8.toList()) encodeCbor serializer<Infinite<List<Int>>>()
+            CBOR_INT_MAX_SIZE8_INDEFINITE,
+            Indefinite(INT_MAX_SIZE8.toList()) encodeCbor serializer<Indefinite<List<Int>>>()
         )
 
         assertEquals(
-            Infinite(INT_MIN_SIZE16.toList()).array,
-            (CBOR_INT_MIN_SIZE16_INFINITE decodeCbor serializer<Infinite<List<Int>>>()).array
+            Indefinite(INT_MIN_SIZE16.toList()).array,
+            (CBOR_INT_MIN_SIZE16_INDEFINITE decodeCbor serializer<Indefinite<List<Int>>>()).array
         )
         assertContentEquals(
-            CBOR_INT_MIN_SIZE16_INFINITE,
-            Infinite(INT_MIN_SIZE16.toList()) encodeCbor serializer<Infinite<List<Int>>>()
+            CBOR_INT_MIN_SIZE16_INDEFINITE,
+            Indefinite(INT_MIN_SIZE16.toList()) encodeCbor serializer<Indefinite<List<Int>>>()
         )
 
     }
 
     @Test
-    fun decodeListInfiniteWithListSerializer() {
-        assertContentEquals(INT_EMPTY.toList(), CBOR_INT_EMPTY_INFINITE decodeCbor serializer<List<Int>>())
-        assertContentEquals(INT_ONE.toList(), CBOR_INT_ONE_INFINITE decodeCbor serializer<List<Int>>())
-        assertContentEquals(INT_MAX_SIZE0.toList(), CBOR_INT_MAX_SIZE0_INFINITE decodeCbor serializer<List<Int>>())
-        assertContentEquals(INT_MIN_SIZE8.toList(), CBOR_INT_MIN_SIZE8_INFINITE decodeCbor serializer<List<Int>>())
-        assertContentEquals(INT_MAX_SIZE8.toList(), CBOR_INT_MAX_SIZE8_INFINITE decodeCbor serializer<List<Int>>())
-        assertContentEquals(INT_MIN_SIZE16.toList(), CBOR_INT_MIN_SIZE16_INFINITE decodeCbor serializer<List<Int>>())
+    fun decodeListIndefiniteWithListSerializer() {
+        assertContentEquals(INT_EMPTY.toList(), CBOR_INT_EMPTY_INDEFINITE decodeCbor serializer<List<Int>>())
+        assertContentEquals(INT_ONE.toList(), CBOR_INT_ONE_INDEFINITE decodeCbor serializer<List<Int>>())
+        assertContentEquals(INT_MAX_SIZE0.toList(), CBOR_INT_MAX_SIZE0_INDEFINITE decodeCbor serializer<List<Int>>())
+        assertContentEquals(INT_MIN_SIZE8.toList(), CBOR_INT_MIN_SIZE8_INDEFINITE decodeCbor serializer<List<Int>>())
+        assertContentEquals(INT_MAX_SIZE8.toList(), CBOR_INT_MAX_SIZE8_INDEFINITE decodeCbor serializer<List<Int>>())
+        assertContentEquals(INT_MIN_SIZE16.toList(), CBOR_INT_MIN_SIZE16_INDEFINITE decodeCbor serializer<List<Int>>())
     }
 
     @Test

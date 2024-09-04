@@ -6,6 +6,8 @@ import kotlinx.benchmark.State
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.cbor.Cbor
+import kotlinx.serialization.serializer
+import net.orandja.obor.data.CborObject
 import net.orandja.obor.codec.Cbor as Obor
 
 @OptIn(ExperimentalSerializationApi::class)
@@ -21,6 +23,7 @@ class Structure {
     companion object {
         val foo = Foo("Hello", Bar(3, listOf(1, 2, 3)), false)
         val fooCbor = Obor.encodeToByteArray(Foo.serializer(), foo)
+        val fooObject = Obor.decodeFromByteArray(serializer<CborObject>(), fooCbor)
     }
 
     @Benchmark
@@ -34,6 +37,11 @@ class Structure {
     }
 
     @Benchmark
+    fun encodeOborObject() {
+        Obor.encodeToByteArray(serializer<CborObject>(), fooObject)
+    }
+
+    @Benchmark
     fun decodeCbor() {
         Cbor.decodeFromByteArray(Foo.serializer(), fooCbor)
     }
@@ -41,5 +49,10 @@ class Structure {
     @Benchmark
     fun decodeObor() {
         Obor.decodeFromByteArray(Foo.serializer(), fooCbor)
+    }
+
+    @Benchmark
+    fun decodeOborObject() {
+        Obor.decodeFromByteArray(serializer<CborObject>(), fooCbor)
     }
 }

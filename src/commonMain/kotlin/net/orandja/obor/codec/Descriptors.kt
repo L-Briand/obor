@@ -5,7 +5,7 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.descriptors.StructureKind
-import net.orandja.obor.annotations.CborInfinite
+import net.orandja.obor.annotations.CborIndefinite
 
 @OptIn(ExperimentalSerializationApi::class)
 internal abstract class ListLikeDescriptor(name: String, private val elementDescriptor: SerialDescriptor) :
@@ -35,9 +35,9 @@ internal abstract class ListLikeDescriptor(name: String, private val elementDesc
 
 internal class ByteArrayDescriptor(name: String) : ListLikeDescriptor(name, Byte.serializer().descriptor)
 internal class ListBytesDescriptor(name: String) : ListLikeDescriptor(name, ByteArrayDescriptor(name)) {
-    override val annotations: List<Annotation> = listOf(CborInfinite())
+    override val annotations: List<Annotation> = listOf(CborIndefinite())
 }
 
 internal class ListStringsDescriptor(name: String) : ListLikeDescriptor(name, String.serializer().descriptor) {
-    override val annotations: List<Annotation> = listOf(CborInfinite())
+    override val annotations: List<Annotation> = listOf(CborIndefinite())
 }

@@ -33,9 +33,9 @@ sealed class CborDecoderException(
         "Size of collection is too large (Size: $size) Collection should not exceed 2^31 (Int.MAX_VALUE) elements."
     )
 
-    class InvalidSizeElement(index: Long, size: Byte, max: Byte, infinite: Boolean) : CborDecoderException(
+    class InvalidSizeElement(index: Long, size: Byte, max: Byte, indefinite: Boolean) : CborDecoderException(
         index,
-        "Header Bits (0x1F) of sized value (${size and SIZE_MASK}) are not in (0..$max)${if (infinite) " or is 0xFF" else ""}."
+        "Header Bits (0x1F) of sized value (${size and SIZE_MASK}) are not in (0..$max)${if (indefinite) " or is 0xFF" else ""}."
     )
 
     class FailedToDecodeElement(index: Long, message: String) : CborDecoderException(

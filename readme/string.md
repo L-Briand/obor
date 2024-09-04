@@ -1,14 +1,14 @@
-# Handling MAJOR (type 3) infinite string
+# Handling MAJOR (type 3) indefinite string
 
-Like [Handling MAJOR (type 2) bytes and infinite bytes](readme_bytes.md) an infinite major (type 3) string is like an
+Like [Handling MAJOR (type 2) bytes and indefinite bytes](bytes) an indefinite major (type 3) string is like an
 array.
 
 So you can choose to encode it with a special serializer:
 
-- [CborListStringSerializer.kt](src/commonMain/kotlin/net/orandja/obor/serializer/CborListStringSerializer.kt)
-  To serialize a `List<String>` as an infinite text string.
-- [CborArrayStringSerializer.kt](src/commonMain/kotlin/net/orandja/obor/serializer/CborArrayStringSerializer.kt)
-  To serialize an `Array<String>` as an infinite text string.
+- [CborListStringSerializer.kt](../src/commonMain/kotlin/net/orandja/obor/serializer/CborListStringSerializer.kt)
+  To serialize a `List<String>` as an indefinite text string.
+- [CborArrayStringSerializer.kt](../src/commonMain/kotlin/net/orandja/obor/serializer/CborArrayStringSerializer.kt)
+  To serialize an `Array<String>` as an indefinite text string.
 
 Example :
 
@@ -37,15 +37,15 @@ println(Cbor.encodeToHexString(Foo(listOf("foo", "bar"))))
 //       FF         # primitive(*)
 ```
 
-Or use the [CborInfinite.kt](src/commonMain/kotlin/net/orandja/obor/annotations/CborInfinite.kt) annotation, it will
-split the string in chunk of 255 characters and encode it with infinite text string.
+Or use the [CborIndefinite.kt](../src/commonMain/kotlin/net/orandja/obor/annotations/CborIndefinite.kt) annotation, it will
+split the string in chunk of 255 characters and encode it with indefinite text string.
 
 Example :
 
 ```kotlin
 @Serializable
-class InfiniteString(@CborInfinite val foo: String)
-println(Cbor.encodeToHexString(InfiniteString("foo")))
+class IndefiniteString(@CborIndefinite val foo: String)
+println(Cbor.encodeToHexString(IndefiniteString("foo")))
 // a163666f6f7f63666f6fff
 // A1              # map(1)
 //    63           # text(3)

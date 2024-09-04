@@ -1,17 +1,26 @@
-package net.orandja.obor.io
+package net.orandja.obor.io.specific
 
-class ExpandableByteArray(initialCapacity: Int = 64) : ExpandableArray<Byte, ByteArray> {
-    override var array: ByteArray = ByteArray(initialCapacity)
-    override var size: Int = 0
-    override fun getSizedArray(): ByteArray = array.copyOfRange(0, size)
+import net.orandja.obor.io.ByteWriter
+import net.orandja.obor.io.WriterException
 
-    override fun ensureCapacity(elementsToAppend: Int) {
+/**
+ * Represent a growing ByteArray,
+ * [ByteWriter]'s methods are meant to add elements without worries.
+ * One implementation can access the [array] directly for better performance, but should keep track of the [size] itself.
+ */
+class ExpandableByteArray(initialCapacity: Int = 64) : ByteWriter {
+    var array: ByteArray = ByteArray(initialCapacity)
+    var size: Int = 0
+    fun getSizedArray(): ByteArray = array.copyOfRange(0, size)
+
+    fun ensureCapacity(elementsToAppend: Int) {
         if (size + elementsToAppend <= array.size) return
         val newArray = ByteArray((size + elementsToAppend).takeHighestOneBit() shl 1)
         array.copyInto(newArray)
         array = newArray
     }
 
+    override fun totalWrite(): Long = size.toLong()
 
     override fun write(value: Byte) {
         ensureCapacity(1)
@@ -29,4 +38,5 @@ class ExpandableByteArray(initialCapacity: Int = 64) : ExpandableArray<Byte, Byt
         array.copyInto(this.array, size, offset, offset + count)
         size += count
     }
+
 }

@@ -1,18 +1,19 @@
-package net.orandja.obor.io
+package net.orandja.obor.io.specific
 
 import net.orandja.obor.codec.SIZE_16
 import net.orandja.obor.codec.SIZE_32
 import net.orandja.obor.codec.SIZE_64
 import net.orandja.obor.codec.SIZE_8
+import net.orandja.obor.io.ByteWriter
+import net.orandja.obor.io.CborWriter
 import kotlin.experimental.and
 import kotlin.experimental.or
 
 /**
  * Implementation of [CborWriter] specific to [ExpandableByteArray] as receiver.
- * If you want to quickly create a [CborWriter] use [CborWriter.ByWriter] with [Writer.OfByteArray]
  */
-internal class CborWriterExpandableByteArray(private val vector: ExpandableByteArray) : CborWriter,
-    Writer<Byte, ByteArray> by vector {
+internal class CborWriterExpandableByteArray(private val vector: ExpandableByteArray) :
+    CborWriter, ByteWriter by vector {
 
     companion object {
         private const val SHORT_BYTE_MASK = 0xFF_00.toShort()

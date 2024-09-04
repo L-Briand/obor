@@ -1,16 +1,8 @@
 package net.orandja.obor.annotations
 
-import kotlinx.serialization.ExperimentalSerializationApi
-import kotlinx.serialization.SerialInfo
 
-/**
- * Annotate an element to serialize it with infinite mark.
- * Can be applied to any structure kind: Object, Class, List, Map, Array, etc.
- *
- * This annotation has no effect on deserialization.
- * TODO: Example
- */
-@OptIn(ExperimentalSerializationApi::class)
-@SerialInfo
-@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY)
-annotation class CborInfinite
+@Deprecated(
+    message = "@CborInfinite was renamed to @CborIndefinite",
+    replaceWith = ReplaceWith("CborIndefinite", "net.orandja.obor.annotations.CborIndefinite")
+)
+typealias CborInfinite = CborIndefinite

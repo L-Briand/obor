@@ -1,6 +1,6 @@
 # Creating tagged elements
 
-A class or a property tagged with [CborTag](src/commonMain/kotlin/net/orandja/obor/annotations/CborTag.kt) will be
+A class or a property tagged with [CborTag](../src/commonMain/kotlin/net/orandja/obor/annotations/CborTag.kt) will be
 prepended with the specified tag.
 
 If the `required = true`, it means that the tag is required during deserialization. The tag will always be written

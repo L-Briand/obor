@@ -14,8 +14,7 @@ import net.orandja.obor.annotations.CborTag
 import net.orandja.obor.annotations.CborTuple
 import net.orandja.obor.codec.CborDecoderException.*
 import net.orandja.obor.io.CborReader
-import net.orandja.obor.io.ExpandableArray
-import net.orandja.obor.io.ExpandableByteArray
+import net.orandja.obor.io.specific.ExpandableByteArray
 import kotlin.experimental.and
 import kotlin.experimental.or
 import kotlin.experimental.xor
@@ -28,7 +27,7 @@ import kotlin.experimental.xor
  */
 @OptIn(ExperimentalSerializationApi::class)
 internal class CborDecoder(
-    private val reader: CborReader,
+    internal val reader: CborReader,
     private val configuration: Cbor.Configuration,
 ) : Decoder, CompositeDecoder {
 
@@ -44,9 +43,10 @@ internal class CborDecoder(
 
     companion object {
         // @formatter:off
-        private const val INLINE    = 0b001 // Class is inline
-        private const val STRUCTURE = 0b010 // Class is structure
-        private const val TUPLE     = 0b100 // Class serialized as list
+        private const val INLINE       = 0b0001 // Class is inline
+        private const val STRUCTURE    = 0b0010 // Class is structure
+        private const val TUPLE        = 0b0100 // Class serialized as an ordered list
+        private const val INLINE_TUPLE = 0b1000 // List<Tuple> is deserialized as a list ordered elements of n * tuple.size elements
         // @formatter:on
     }
 
@@ -61,17 +61,14 @@ internal class CborDecoder(
      * So the tracker have:
      * - When dealing with b the tracker contains `[metadata A, metadata b]`
      * - When dealing with B the tracker contains `[metadata A, metadata b, metadata B]`
-     *
-     * The tracker is a [ExpandableArray] in essence,
-     * but it is more efficient to have it embedded in the class directly.
      */
     private var tracker = IntArray(16)
 
-    private var depth = 0
+    private var depth = 1
 
     private inline fun ensureCapacity(elementsToAppend: Int) {
-        if (depth * 4 + 1 + elementsToAppend * 4 <= tracker.size) return
-        val newArray = IntArray((tracker.size + 1 + elementsToAppend * 4).takeHighestOneBit() shl 1)
+        if ((depth * 4) + 4 + elementsToAppend * 4 <= tracker.size) return
+        val newArray = IntArray((tracker.size + elementsToAppend * 4).takeHighestOneBit() shl 1)
         tracker.copyInto(newArray, 0, 0, tracker.size)
         tracker = newArray
     }
@@ -112,24 +109,34 @@ internal class CborDecoder(
             depth++
         }
 
-        var major: Byte = MAJOR_MAP
+        setMajor(depth, MAJOR_MAP)
         when (descriptor.kind) {
             StructureKind.CLASS, StructureKind.OBJECT -> {
                 setFlag(depth, STRUCTURE)
                 for (annotation in descriptor.annotations) if (annotation is CborTuple) {
                     setFlag(depth, TUPLE)
-                    major = MAJOR_ARRAY
+                    setMajor(depth, MAJOR_ARRAY)
                 }
             }
 
             StructureKind.LIST -> {
-                major = when {
-                    descriptor is ByteArrayDescriptor || descriptor is ListBytesDescriptor -> MAJOR_BYTE
-                    descriptor is ListStringsDescriptor -> MAJOR_TEXT
-                    descriptor.getElementDescriptor(0).kind is PrimitiveKind.BYTE
-                            && reader.peek() hasMajor MAJOR_BYTE -> MAJOR_BYTE
+                when {
+                    descriptor is ByteArrayDescriptor || descriptor is ListBytesDescriptor ->
+                        setMajor(depth, MAJOR_BYTE)
 
-                    else -> MAJOR_ARRAY
+                    descriptor is ListStringsDescriptor -> setMajor(depth, MAJOR_TEXT)
+                    descriptor.getElementDescriptor(0).kind is PrimitiveKind.BYTE
+                            && reader.peek() hasMajor MAJOR_BYTE -> setMajor(depth, MAJOR_BYTE)
+
+                    else -> {
+                        if (descriptor.elementsCount == 1)
+                            for (annotation in descriptor.getElementDescriptor(0).annotations)
+                                if (annotation is CborTuple && annotation.inlinedInList) {
+                                    setFlag(depth, INLINE_TUPLE)
+                                    break
+                                }
+                        setMajor(depth, MAJOR_ARRAY)
+                    }
                 }
             }
 
@@ -138,12 +145,53 @@ internal class CborDecoder(
             else -> throw InvalidStructureKind(reader.totalRead(), descriptor)
         }
 
-        if (!(reader.peek() hasMajor major))
-            throw InvalidMajor(reader.totalRead(), reader.peek(), major, descriptor)
 
-        setMajor(depth, major)
-        setCollectionSize(depth, decodeCollectionSize(descriptor))
+
+        if (hasFlag(depth - 1, INLINE_TUPLE) && hasFlag(depth, TUPLE)) {
+            setMajor(depth, MAJOR_ARRAY)
+            setCollectionSize(depth, descriptor.elementsCount)
+        } else {
+            if (!(reader.peek() hasMajor getMajor(depth)))
+                throw InvalidMajor(reader.totalRead(), getMajor(depth), reader.peek(), descriptor)
+
+            var collectionSize = decodeCollectionSize(descriptor)
+            if (collectionSize != -1 && hasFlag(depth, INLINE_TUPLE))
+                collectionSize /= descriptor.getElementDescriptor(0).elementsCount
+            setCollectionSize(depth, collectionSize)
+        }
         return this
+    }
+
+    /**
+     * To avoid any missuses, It denies any size over [Int.MAX_VALUE]
+     * Otherwise it implies that something will be created in memory with more than [Int.MAX_VALUE] bytes.
+     * The language does not allow something like: ByteArray(Long > Int.MAX_VALUE).
+     *
+     * @return -1 when size is indefinite
+     */
+    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int {
+        val result = decodeCollectionSize()
+        // Map<*,*> requires double of the result size
+        return if (getMajor(depth) == MAJOR_MAP && !hasFlag(depth, TUPLE) && !hasFlag(depth, STRUCTURE)) result * 2
+        else result
+    }
+
+    inline fun decodeCollectionSize(): Int {
+        val sizeBits = reader.peekConsume() and SIZE_MASK
+        val result = when {
+            sizeBits < SIZE_8 -> sizeBits.toInt()
+            sizeBits == SIZE_8 -> reader.nextByte().toInt() and 0xFF
+            sizeBits == SIZE_16 -> reader.nextShort().toInt() and 0xFFFF
+            sizeBits == SIZE_32 -> {
+                val result = reader.nextInt()
+                if (result < 0) throw CollectionSizeTooLarge(reader.totalRead(), result.toULong())
+                result
+            }
+
+            sizeBits == SIZE_INDEFINITE -> return -1
+            else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_32, true)
+        }
+        return result
     }
 
     override fun endStructure(descriptor: SerialDescriptor) {
@@ -200,8 +248,15 @@ internal class CborDecoder(
 
     private fun isCollectionDone(): Boolean {
         val collectionSize = getCollectionSize(depth)
-        val infinite = collectionSize == -1
-        return (!infinite && getIndex(depth) == collectionSize) || (infinite && reader.peek() == HEADER_BREAK)
+        return when {
+            collectionSize != -1 && getIndex(depth) == collectionSize -> true
+            collectionSize == -1 && reader.peek() == HEADER_BREAK -> {
+                reader.consume()
+                true
+            }
+
+            else -> false
+        }
     }
 
     private fun decodeStructureElementIndex(descriptor: SerialDescriptor): Int {
@@ -226,34 +281,6 @@ internal class CborDecoder(
             skipElement()
             if (isCollectionDone()) return CompositeDecoder.DECODE_DONE
         }
-    }
-
-    /**
-     * To avoid any missuses, It denies any size over [Int.MAX_VALUE]
-     * Otherwise it implies that something will be created in memory with more than [Int.MAX_VALUE] bytes.
-     * The language does not allow something like: ByteArray(Long > Int.MAX_VALUE).
-     *
-     * @return -1 when size is infinite
-     */
-    override fun decodeCollectionSize(descriptor: SerialDescriptor): Int {
-        val sizeBits = reader.peekConsume() and SIZE_MASK
-        val result = when {
-            sizeBits < SIZE_8 -> sizeBits.toInt()
-            sizeBits == SIZE_8 -> reader.nextByte().toInt() and 0xFF
-            sizeBits == SIZE_16 -> reader.nextShort().toInt() and 0xFFFF
-            sizeBits == SIZE_32 -> {
-                val result = reader.nextInt()
-                if (result < 0) throw CollectionSizeTooLarge(reader.totalRead(), result.toULong())
-                result
-            }
-
-            sizeBits == SIZE_INFINITE -> return -1
-            else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_32, true)
-        }
-
-        // Map<*,*> requires double of the result size
-        return if (getMajor(depth) == MAJOR_MAP && !hasFlag(depth, TUPLE) && !hasFlag(depth, STRUCTURE)) result * 2
-        else result
     }
 
     override fun decodeBooleanElement(descriptor: SerialDescriptor, index: Int): Boolean {
@@ -345,6 +372,11 @@ internal class CborDecoder(
         else throw FailedToDecodeElement(reader.totalRead(), "NULL ($HEADER_NULL)")
     }
 
+    fun decodeUndefined(): Nothing? {
+        return if (reader.peekConsume() == HEADER_UNDEFINED) null
+        else throw FailedToDecodeElement(reader.totalRead(), "UNDEFINED ($HEADER_UNDEFINED)")
+    }
+
     override fun decodeBoolean(): Boolean {
         return when (reader.peekConsume()) {
             HEADER_FALSE -> false
@@ -374,7 +406,7 @@ internal class CborDecoder(
     }
 
     override fun decodeByte(): Byte {
-        // Discard intermittent size bytes in infinite bytes string
+        // Discard intermittent size bytes in indefinite bytes string
         if (getMajor(depth) == MAJOR_BYTE && getCollectionSize(depth) == -1) {
             val peek = reader.peek()
             if (peek and MAJOR_MASK == MAJOR_BYTE) skipSimpleElement(peek)
@@ -512,14 +544,14 @@ internal class CborDecoder(
                 result
             }
 
-            sizeBits == SIZE_INFINITE -> return decodeStringInfinite()
+            sizeBits == SIZE_INDEFINITE -> return decodeStringIndefinite()
             else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_64, true)
         }
         reader.consume()
-        return reader.readAsString(size)
+        return reader.readString(size)
     }
 
-    private fun decodeStringInfinite(): String {
+    private fun decodeStringIndefinite(): String {
         val builder = StringBuilder()
         val descriptor = ListStringsDescriptor(name(CborDecoder::class))
         decodeStructure(descriptor) {
@@ -535,7 +567,7 @@ internal class CborDecoder(
     }
 
     /**
-     * This function exists to decode bytearrays (and infinite bytes string) more efficiently like a string.
+     * This function exists to decode bytearrays (and indefinite bytes string) more efficiently like a string.
      */
     fun decodeBytes(): ByteArray {
         val header = reader.peek()
@@ -552,14 +584,14 @@ internal class CborDecoder(
                 result
             }
 
-            sizeBits == SIZE_INFINITE -> return decodeBytesInfinite()
+            sizeBits == SIZE_INDEFINITE -> return decodeBytesIndefinite()
             else -> throw InvalidSizeElement(reader.totalRead(), sizeBits, SIZE_32, true)
         }
         reader.consume()
         return reader.read(size)
     }
 
-    private fun decodeBytesInfinite(): ByteArray {
+    private fun decodeBytesIndefinite(): ByteArray {
         val result = ExpandableByteArray()
         var buffer: ByteArray
         val descriptor = ListBytesDescriptor(name(CborDecoder::class))
@@ -624,7 +656,7 @@ internal class CborDecoder(
 
     // NEGATIVE UNSIGNED
 
-    fun decodeUByteNeg(): UByte {
+    fun decodeNegativeUByte(): UByte {
         return when (val it = reader.peekConsume()) {
             in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUByte()
             HEADER_NEGATIVE_8 -> reader.nextByte().toUByte().toByte().toUByte()
@@ -632,7 +664,7 @@ internal class CborDecoder(
         }
     }
 
-    fun decodeUShortNeg(): UShort {
+    fun decodeNegativeUShort(): UShort {
         return when (val it = reader.peekConsume()) {
             in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUShort()
             HEADER_NEGATIVE_8 -> reader.nextByte().toUByte().toUShort()
@@ -641,7 +673,7 @@ internal class CborDecoder(
         }
     }
 
-    fun decodeUIntNeg(): UInt {
+    fun decodeNegativeUInt(): UInt {
         return when (val it = reader.peekConsume()) {
             in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toUInt()
             HEADER_NEGATIVE_8 -> reader.nextByte().toUByte().toUInt()
@@ -651,7 +683,7 @@ internal class CborDecoder(
         }
     }
 
-    fun decodeULongNeg(): ULong {
+    fun decodeNegativeULong(): ULong {
         return when (val it = reader.peekConsume()) {
             in (HEADER_NEGATIVE_START until HEADER_NEGATIVE_8) -> (it and SIZE_MASK).toULong()
             HEADER_NEGATIVE_8 -> reader.nextByte().toUByte().toULong()
@@ -671,17 +703,17 @@ internal class CborDecoder(
         val peek = reader.peek()
         when {
             peek hasMajor (MAJOR_BYTE or MAJOR_TEXT) -> when {
-                peek and SIZE_INFINITE == SIZE_INFINITE -> skipRepeatInfinite()
+                peek and SIZE_INDEFINITE == SIZE_INDEFINITE -> skipRepeatIndefinite()
                 else -> reader.skip(getSize(peek).toInt())
             }
 
             peek hasMajor MAJOR_ARRAY -> when {
-                peek and SIZE_INFINITE == SIZE_INFINITE -> skipRepeatInfinite()
+                peek and SIZE_INDEFINITE == SIZE_INDEFINITE -> skipRepeatIndefinite()
                 else -> skipRepeat(peek) { skipElement() }
             }
 
             peek hasMajor MAJOR_MAP -> when {
-                peek and SIZE_INFINITE == SIZE_INFINITE -> skipRepeatInfinite()
+                peek and SIZE_INDEFINITE == SIZE_INDEFINITE -> skipRepeatIndefinite()
                 else -> skipRepeat(peek) { skipElement(); skipElement() }
             }
 
@@ -712,7 +744,7 @@ internal class CborDecoder(
     }
 
     @Suppress("NOTHING_TO_INLINE")
-    private inline fun skipRepeatInfinite() {
+    private inline fun skipRepeatIndefinite() {
         reader.consume()
         while (reader.peek() != HEADER_BREAK) skipElement()
         reader.consume()

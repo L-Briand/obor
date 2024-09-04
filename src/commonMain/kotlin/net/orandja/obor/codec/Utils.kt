@@ -30,7 +30,7 @@ internal const val SIZE_8: Byte = 0x18
 internal const val SIZE_16: Byte = 0x19
 internal const val SIZE_32: Byte = 0x1A
 internal const val SIZE_64: Byte = 0x1B
-internal const val SIZE_INFINITE: Byte = 0x1F
+internal const val SIZE_INDEFINITE: Byte = 0x1F
 internal const val SIZE_MASK: Byte = 0x1F
 
 internal const val HEADER_POSITIVE_START: Byte = MAJOR_POSITIVE
@@ -49,7 +49,7 @@ internal val HEADER_FALSE: Byte = MAJOR_PRIMITIVE or 0x14
 internal val HEADER_TRUE: Byte = MAJOR_PRIMITIVE or 0x15
 internal val HEADER_NULL: Byte = MAJOR_PRIMITIVE or 0x16
 internal val HEADER_UNDEFINED: Byte = MAJOR_PRIMITIVE or 0x17
-internal val HEADER_BREAK: Byte = MAJOR_PRIMITIVE or 0x1F
+internal val HEADER_BREAK: Byte = MAJOR_PRIMITIVE or SIZE_INDEFINITE
 
 internal val HEADER_FLOAT_16: Byte = MAJOR_PRIMITIVE or SIZE_16
 internal val HEADER_FLOAT_32: Byte = MAJOR_PRIMITIVE or SIZE_32

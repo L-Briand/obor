@@ -1,6 +1,6 @@
 package net.orandja.obor.io
 
-interface CborReader : Reader<Byte, ByteArray> {
+interface CborReader : ByteReader {
     fun peek(): Byte
     fun consume()
     fun peekConsume(): Byte {
@@ -15,7 +15,7 @@ interface CborReader : Reader<Byte, ByteArray> {
     fun nextLong(): Long
 
     /** Use this class to quickly write a CborReader. */
-    open class ByReader(private val reader: Reader<Byte, ByteArray>) : CborReader, Reader<Byte, ByteArray> by reader {
+    open class ByReader(private val reader: ByteReader) : CborReader, ByteReader by reader {
         private var peek: Byte? = null
         override fun peek(): Byte {
             if (peek != null) return peek!!
