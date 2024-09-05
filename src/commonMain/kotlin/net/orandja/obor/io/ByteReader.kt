@@ -1,24 +1,12 @@
 package net.orandja.obor.io
 
-
-/** Something that can read in a native array */
-interface Reader<T, arrayOfT> {
-    fun totalRead(): Long
+interface ByteReader : NativeArrayReader<Byte, ByteArray> {
 
     @Throws(ReaderException::class)
-    fun read(): T
-
-    @Throws(ReaderException::class)
-    fun read(count: Int): arrayOfT
-
-    @Throws(ReaderException::class)
-    fun readAsString(count: Int): String
-
-    @Throws(ReaderException::class)
-    fun skip(count: Int)
+    fun readString(count: Int): String
 
     /** Simple implementation to read from a [ByteArray] */
-    class OfByteArray(private val bytes: ByteArray) : Reader<Byte, ByteArray> {
+    class Of(private val bytes: ByteArray) : ByteReader {
         private var position = 0
         override fun totalRead(): Long = position.toLong()
 
@@ -37,7 +25,7 @@ interface Reader<T, arrayOfT> {
             return result
         }
 
-        override fun readAsString(count: Int): String {
+        override fun readString(count: Int): String {
             if (count == 0) return ""
             if (position + count > bytes.size)
                 throw ReaderException("Cannot read beyond the end of the byte array. (Size: ${bytes.size}, Range: ${position..<count})")

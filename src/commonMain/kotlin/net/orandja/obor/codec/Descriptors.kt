@@ -5,10 +5,11 @@ import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.descriptors.SerialKind
 import kotlinx.serialization.descriptors.StructureKind
-import net.orandja.obor.annotations.CborInfinite
+import net.orandja.obor.annotations.CborIndefinite
 
 @OptIn(ExperimentalSerializationApi::class)
-abstract class ListLikeDescriptor(name: String, private val elementDescriptor: SerialDescriptor) : SerialDescriptor {
+internal abstract class ListLikeDescriptor(name: String, private val elementDescriptor: SerialDescriptor) :
+    SerialDescriptor {
     override val annotations: List<Annotation> = listOf()
     override val elementsCount: Int = 1
     override val kind: SerialKind = StructureKind.LIST
@@ -32,11 +33,11 @@ abstract class ListLikeDescriptor(name: String, private val elementDescriptor: S
     }
 }
 
-class ByteArrayDescriptor(name: String) : ListLikeDescriptor(name, Byte.serializer().descriptor)
-class ListBytesDescriptor(name: String) : ListLikeDescriptor(name, ByteArrayDescriptor(name)) {
-    override val annotations: List<Annotation> = listOf(CborInfinite())
+internal class ByteArrayDescriptor(name: String) : ListLikeDescriptor(name, Byte.serializer().descriptor)
+internal class ListBytesDescriptor(name: String) : ListLikeDescriptor(name, ByteArrayDescriptor(name)) {
+    override val annotations: List<Annotation> = listOf(CborIndefinite())
 }
 
-class ListStringsDescriptor(name: String) : ListLikeDescriptor(name, String.serializer().descriptor) {
-    override val annotations: List<Annotation> = listOf(CborInfinite())
+internal class ListStringsDescriptor(name: String) : ListLikeDescriptor(name, String.serializer().descriptor) {
+    override val annotations: List<Annotation> = listOf(CborIndefinite())
 }

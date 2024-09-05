@@ -41,10 +41,10 @@ class MajorNegativeTest {
         assertTransformation(CBOR_EMPTY, EMPTY.toInt())
         assertTransformation(CBOR_EMPTY, EMPTY.toLong())
 
-        assertTransformation(CBOR_EMPTY, UEMPTY, CborUnsignedSerializer.UByteNeg)
-        assertTransformation(CBOR_EMPTY, UEMPTY.toUShort(), CborUnsignedSerializer.UShortNeg)
-        assertTransformation(CBOR_EMPTY, UEMPTY.toUInt(), CborUnsignedSerializer.UIntNeg)
-        assertTransformation(CBOR_EMPTY, UEMPTY.toULong(), CborUnsignedSerializer.ULongNeg)
+        assertTransformation(CBOR_EMPTY, UEMPTY, CborUnsignedSerializer.UByteNegative)
+        assertTransformation(CBOR_EMPTY, UEMPTY.toUShort(), CborUnsignedSerializer.UShortNegative)
+        assertTransformation(CBOR_EMPTY, UEMPTY.toUInt(), CborUnsignedSerializer.UIntNegative)
+        assertTransformation(CBOR_EMPTY, UEMPTY.toULong(), CborUnsignedSerializer.ULongNegative)
     }
 
     @Test
@@ -54,10 +54,10 @@ class MajorNegativeTest {
         assertTransformation(CBOR_SIZE_0, SIZE_0.toInt())
         assertTransformation(CBOR_SIZE_0, SIZE_0.toLong())
 
-        assertTransformation(CBOR_SIZE_0, USIZE_0, CborUnsignedSerializer.UByteNeg)
-        assertTransformation(CBOR_SIZE_0, USIZE_0.toUShort(), CborUnsignedSerializer.UShortNeg)
-        assertTransformation(CBOR_SIZE_0, USIZE_0.toUInt(), CborUnsignedSerializer.UIntNeg)
-        assertTransformation(CBOR_SIZE_0, USIZE_0.toULong(), CborUnsignedSerializer.ULongNeg)
+        assertTransformation(CBOR_SIZE_0, USIZE_0, CborUnsignedSerializer.UByteNegative)
+        assertTransformation(CBOR_SIZE_0, USIZE_0.toUShort(), CborUnsignedSerializer.UShortNegative)
+        assertTransformation(CBOR_SIZE_0, USIZE_0.toUInt(), CborUnsignedSerializer.UIntNegative)
+        assertTransformation(CBOR_SIZE_0, USIZE_0.toULong(), CborUnsignedSerializer.ULongNegative)
     }
 
     @Test
@@ -68,10 +68,10 @@ class MajorNegativeTest {
         assertTransformation(CBOR_SIZE_8, SIZE_8)
         assertTransformation(CBOR_SIZE_8, SIZE_8.toInt())
         assertTransformation(CBOR_SIZE_8, SIZE_8.toLong())
-        assertTransformation(CBOR_SIZE_8, USIZE_8, CborUnsignedSerializer.UByteNeg)
-        assertTransformation(CBOR_SIZE_8, USIZE_8.toUShort(), CborUnsignedSerializer.UShortNeg)
-        assertTransformation(CBOR_SIZE_8, USIZE_8.toUInt(), CborUnsignedSerializer.UIntNeg)
-        assertTransformation(CBOR_SIZE_8, USIZE_8.toULong(), CborUnsignedSerializer.ULongNeg)
+        assertTransformation(CBOR_SIZE_8, USIZE_8, CborUnsignedSerializer.UByteNegative)
+        assertTransformation(CBOR_SIZE_8, USIZE_8.toUShort(), CborUnsignedSerializer.UShortNegative)
+        assertTransformation(CBOR_SIZE_8, USIZE_8.toUInt(), CborUnsignedSerializer.UIntNegative)
+        assertTransformation(CBOR_SIZE_8, USIZE_8.toULong(), CborUnsignedSerializer.ULongNegative)
     }
 
     @Test
@@ -85,9 +85,9 @@ class MajorNegativeTest {
         assertTransformation(CBOR_SIZE_16, SIZE_16)
         assertTransformation(CBOR_SIZE_16, SIZE_16.toLong())
 
-        assertTransformation(CBOR_SIZE_16, USIZE_16, CborUnsignedSerializer.UShortNeg)
-        assertTransformation(CBOR_SIZE_16, USIZE_16.toUInt(), CborUnsignedSerializer.UIntNeg)
-        assertTransformation(CBOR_SIZE_16, USIZE_16.toULong(), CborUnsignedSerializer.ULongNeg)
+        assertTransformation(CBOR_SIZE_16, USIZE_16, CborUnsignedSerializer.UShortNegative)
+        assertTransformation(CBOR_SIZE_16, USIZE_16.toUInt(), CborUnsignedSerializer.UIntNegative)
+        assertTransformation(CBOR_SIZE_16, USIZE_16.toULong(), CborUnsignedSerializer.ULongNegative)
     }
 
     @Test
@@ -103,8 +103,8 @@ class MajorNegativeTest {
         }
         assertTransformation(CBOR_SIZE_32, SIZE_32)
 
-        assertTransformation(CBOR_SIZE_32, USIZE_32, CborUnsignedSerializer.UIntNeg)
-        assertTransformation(CBOR_SIZE_32, USIZE_32.toULong(), CborUnsignedSerializer.ULongNeg)
+        assertTransformation(CBOR_SIZE_32, USIZE_32, CborUnsignedSerializer.UIntNegative)
+        assertTransformation(CBOR_SIZE_32, USIZE_32.toULong(), CborUnsignedSerializer.ULongNegative)
     }
 
     @Test
@@ -119,7 +119,7 @@ class MajorNegativeTest {
             Cbor.decodeFromByteArray(Int.serializer(), CBOR_SIZE_64)
         }
         assertTransformation(CBOR_SIZE_64, SIZE_64)
-        assertTransformation(CBOR_SIZE_64, USIZE_64, CborUnsignedSerializer.ULongNeg)
+        assertTransformation(CBOR_SIZE_64, USIZE_64, CborUnsignedSerializer.ULongNegative)
     }
 
     @Test
@@ -136,6 +136,6 @@ class MajorNegativeTest {
         assertFailsWith(CborDecoderException::class) {
             Cbor.decodeFromByteArray(Long.serializer(), CBOR_LIMIT)
         }
-        assertTransformation(CBOR_LIMIT, ULIMIT, CborUnsignedSerializer.ULongNeg)
+        assertTransformation(CBOR_LIMIT, ULIMIT, CborUnsignedSerializer.ULongNegative)
     }
 }

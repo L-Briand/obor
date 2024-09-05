@@ -4,10 +4,10 @@ import kotlinx.serialization.KSerializer
 import kotlinx.serialization.serializer
 import net.orandja.obor.codec.Cbor
 import net.orandja.obor.codec.HEADER_BREAK
-import net.orandja.obor.codec.SIZE_INFINITE
-import net.orandja.obor.io.ExpandableByteArray
-import net.orandja.obor.io.CborWriterExpandableByteArray
+import net.orandja.obor.codec.SIZE_INDEFINITE
 import net.orandja.obor.io.CborWriter
+import net.orandja.obor.io.specific.CborWriterExpandableByteArray
+import net.orandja.obor.io.specific.ExpandableByteArray
 import kotlin.experimental.or
 import kotlin.math.ceil
 import kotlin.test.assertContentEquals
@@ -20,15 +20,15 @@ fun CborWriter.buildSize(major: Byte, amount: Int, value: Byte = 0) {
     repeat(amount) { write(value) }
 }
 
-fun buildChunkedInfinite(major: Byte, amount: Int, chunk: Int, value: Byte = 0) = buildCbor {
-    write((major or SIZE_INFINITE))
+fun buildChunkedIndefinite(major: Byte, amount: Int, chunk: Int, value: Byte = 0) = buildCbor {
+    write((major or SIZE_INDEFINITE))
     repeat(amount / chunk) { buildSize(major, chunk, value) }
     if (amount % chunk > 0) buildSize(major, amount % chunk, value)
     write(HEADER_BREAK)
 }
 
-fun buildInfinite(major: Byte, amount: Int, onValue: CborWriter.() -> Unit) = buildCbor {
-    write((major or SIZE_INFINITE))
+fun buildIndefinite(major: Byte, amount: Int, onValue: CborWriter.() -> Unit) = buildCbor {
+    write((major or SIZE_INDEFINITE))
     repeat(amount) { onValue() }
     write(HEADER_BREAK)
 }

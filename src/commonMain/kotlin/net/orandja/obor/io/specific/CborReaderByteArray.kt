@@ -1,8 +1,11 @@
-package net.orandja.obor.io
+package net.orandja.obor.io.specific
+
+import net.orandja.obor.io.CborReader
+import net.orandja.obor.io.ReaderException
 
 /**
  * Implementation of [CborReader] specific to [ByteArray] as receiver.
- * If you want to quickly create a [CborReader] use [CborReader.ByReader] with [Reader.OfByteArray]
+ * If you want to quickly create a [CborReader] use [CborReader.ByReader] with [ByteReader.Of]
  */
 internal class CborReaderByteArray(private val bytes: ByteArray) : CborReader {
 
@@ -24,7 +27,7 @@ internal class CborReaderByteArray(private val bytes: ByteArray) : CborReader {
         return result
     }
 
-    override fun readAsString(count: Int): String {
+    override fun readString(count: Int): String {
         if (count == 0) return ""
         if (position + count > bytes.size)
             throw ReaderException("Cannot read beyond the end of the byte array. (Size: ${bytes.size}, Range: ${position..<count})")

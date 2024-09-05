@@ -11,7 +11,7 @@ println(Cbor.encodeToHexString(200u.toUByte())) // 3837 # negative(55)
 ```
 
 If you require a strict policy on some of your data, you can use one of the many unsigned
-serializer [CborUnsignedSerializer.kt](src/commonMain/kotlin/net/orandja/obor/serializer/CborUnsignedSerializer.kt).
+serializer [CborUnsignedSerializer.kt](../src/commonMain/kotlin/net/orandja/obor/serializer/CborUnsignedSerializer.kt).
 
 ```
 CborUnsignedSerializer.UByte

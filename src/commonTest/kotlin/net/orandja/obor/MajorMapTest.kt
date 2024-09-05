@@ -2,7 +2,7 @@ package net.orandja.obor
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.serializer
-import net.orandja.obor.annotations.CborInfinite
+import net.orandja.obor.annotations.CborIndefinite
 import net.orandja.obor.codec.MAJOR_MAP
 import net.orandja.obor.codec.MAJOR_POSITIVE
 import kotlin.test.Test
@@ -26,10 +26,10 @@ class MajorMapTest {
             emptyMap<UShort, Array<String>>(),
             CBOR_MAP_EMPTY decodeCbor serializer<Map<UShort, Array<String>>>()
         )
-        assertContentEquals(CBOR_MAP_EMPTY, emptyMap<Long, Infinite<String>>() encodeCbor serializer())
+        assertContentEquals(CBOR_MAP_EMPTY, emptyMap<Long, Indefinite<String>>() encodeCbor serializer())
         assertEquals(
-            emptyMap<Long, Infinite<String>>(),
-            CBOR_MAP_EMPTY decodeCbor serializer<Map<Long, Infinite<String>>>()
+            emptyMap<Long, Indefinite<String>>(),
+            CBOR_MAP_EMPTY decodeCbor serializer<Map<Long, Indefinite<String>>>()
         )
     }
 
@@ -71,14 +71,14 @@ class MajorMapTest {
     data class User(val id: Int, val name: String)
 
     @Serializable
-    @CborInfinite
-    data class UserInfinite(val id: Int, val name: String)
+    @CborIndefinite
+    data class UserIndefinite(val id: Int, val name: String)
 
     @Test
     fun basicDataClass() {
         val user = User(0, "John")
         val cborUser = "A262696400646E616D65644A6F686E".hex()
-        val userInf = UserInfinite(0, "John")
+        val userInf = UserIndefinite(0, "John")
         val cborUserInf = "BF62696400646E616D65644A6F686EFF".hex()
 
         assertEquals(user, cborUser decodeCbor serializer())
@@ -86,5 +86,22 @@ class MajorMapTest {
 
         assertEquals(userInf, cborUserInf decodeCbor serializer())
         assertContentEquals(cborUserInf, userInf encodeCbor serializer())
+    }
+
+
+    @CborIndefinite
+    @Serializable
+    data class AllIndefinite(
+        @CborIndefinite val a: List<Int>,
+        @CborIndefinite val b: List<Short>,
+    )
+
+    @Test
+    fun allIndefinite() {
+        val data = AllIndefinite(listOf(0, 1), listOf(2, 3))
+        val cbor = "BF61619F0001FF61629F0203FFFF".hex()
+        println(data.encodeCbor(serializer()).hex())
+        assertEquals(data, cbor decodeCbor serializer())
+        assertContentEquals(cbor, data encodeCbor serializer())
     }
 }

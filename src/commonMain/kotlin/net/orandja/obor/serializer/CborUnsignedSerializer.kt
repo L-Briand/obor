@@ -84,71 +84,71 @@ sealed class CborUnsignedSerializer {
 
     // NEGATIVE
 
-    object UByteNeg : CborUnsignedSerializer(), KSerializer<kotlin.UByte> {
+    object UByteNegative : CborUnsignedSerializer(), KSerializer<kotlin.UByte> {
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
-            name(CborUnsignedSerializer::class, UByteNeg::class),
+            name(CborUnsignedSerializer::class, UByteNegative::class),
             PrimitiveKind.BYTE
         )
 
         override fun deserialize(decoder: Decoder): kotlin.UByte {
-            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, UByteNeg::class) }
-            return decoder.decodeUByteNeg()
+            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, UByteNegative::class) }
+            return decoder.decodeNegativeUByte()
         }
 
         override fun serialize(encoder: Encoder, value: kotlin.UByte) {
-            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, UByteNeg::class) }
-            return encoder.encodeUByteNeg(value)
+            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, UByteNegative::class) }
+            return encoder.encodeNegativeUByte(value)
         }
     }
 
-    object UShortNeg : CborUnsignedSerializer(), KSerializer<kotlin.UShort> {
+    object UShortNegative : CborUnsignedSerializer(), KSerializer<kotlin.UShort> {
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
-            name(CborUnsignedSerializer::class, UShortNeg::class),
+            name(CborUnsignedSerializer::class, UShortNegative::class),
             PrimitiveKind.BYTE
         )
 
         override fun deserialize(decoder: Decoder): kotlin.UShort {
-            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, UShortNeg::class) }
-            return decoder.decodeUShortNeg()
+            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, UShortNegative::class) }
+            return decoder.decodeNegativeUShort()
         }
 
         override fun serialize(encoder: Encoder, value: kotlin.UShort) {
-            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, UShortNeg::class) }
-            return encoder.encodeUShortNeg(value)
+            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, UShortNegative::class) }
+            return encoder.encodeNegativeUShort(value)
         }
     }
 
-    object UIntNeg : CborUnsignedSerializer(), KSerializer<kotlin.UInt> {
+    object UIntNegative : CborUnsignedSerializer(), KSerializer<kotlin.UInt> {
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
-            name(CborUnsignedSerializer::class, UIntNeg::class),
+            name(CborUnsignedSerializer::class, UIntNegative::class),
             PrimitiveKind.BYTE
         )
 
         override fun deserialize(decoder: Decoder): kotlin.UInt {
-            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, UIntNeg::class) }
-            return decoder.decodeUIntNeg()
+            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, UIntNegative::class) }
+            return decoder.decodeNegativeUInt()
         }
 
         override fun serialize(encoder: Encoder, value: kotlin.UInt) {
-            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, UIntNeg::class) }
-            return encoder.encodeUIntNeg(value)
+            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, UIntNegative::class) }
+            return encoder.encodeNegativeUInt(value)
         }
     }
 
-    object ULongNeg : CborUnsignedSerializer(), KSerializer<kotlin.ULong> {
+    object ULongNegative : CborUnsignedSerializer(), KSerializer<kotlin.ULong> {
         override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor(
-            name(CborUnsignedSerializer::class, ULongNeg::class),
+            name(CborUnsignedSerializer::class, ULongNegative::class),
             PrimitiveKind.BYTE
         )
 
         override fun deserialize(decoder: Decoder): kotlin.ULong {
-            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, ULongNeg::class) }
-            return decoder.decodeULongNeg()
+            decoder.assertCborDecoder { name(CborUnsignedSerializer::class, ULongNegative::class) }
+            return decoder.decodeNegativeULong()
         }
 
         override fun serialize(encoder: Encoder, value: kotlin.ULong) {
-            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, ULongNeg::class) }
-            return encoder.encodeULongNeg(value)
+            encoder.assertCborEncoder { name(CborUnsignedSerializer::class, ULongNegative::class) }
+            return encoder.encodeNegativeULong(value)
         }
     }
 }
