@@ -228,8 +228,8 @@ internal class CborEncoder(
 
         ensureCapacity(1)
         depth++
-        if(descriptor.elementsCount > index)
-        updateTrackerWithAnnotations(descriptor.getElementAnnotations(index))
+        if (descriptor.elementsCount > index)
+            updateTrackerWithAnnotations(descriptor.getElementAnnotations(index))
         block()
         clear(depth)
         depth--
