@@ -93,13 +93,19 @@ class MajorArrayTest {
             Indefinite(INT_EMPTY).array,
             (CBOR_INT_EMPTY_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
         )
-        assertContentEquals(CBOR_INT_EMPTY_INDEFINITE, Indefinite(INT_EMPTY) encodeCbor serializer<Indefinite<Array<Int>>>())
+        assertContentEquals(
+            CBOR_INT_EMPTY_INDEFINITE,
+            Indefinite(INT_EMPTY) encodeCbor serializer<Indefinite<Array<Int>>>()
+        )
 
         assertContentEquals(
             Indefinite(INT_ONE).array,
             (CBOR_INT_ONE_INDEFINITE decodeCbor serializer<Indefinite<Array<Int>>>()).array
         )
-        assertContentEquals(CBOR_INT_ONE_INDEFINITE, Indefinite(INT_ONE) encodeCbor serializer<Indefinite<Array<Int>>>())
+        assertContentEquals(
+            CBOR_INT_ONE_INDEFINITE,
+            Indefinite(INT_ONE) encodeCbor serializer<Indefinite<Array<Int>>>()
+        )
 
         assertContentEquals(
             Indefinite(INT_MAX_SIZE0).array,

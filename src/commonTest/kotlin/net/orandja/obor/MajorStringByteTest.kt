@@ -275,7 +275,10 @@ class MajorStringByteTest {
     @Test
     fun classBytesArray2() {
         assertEquals(BytesArray2(EMPTY.toTypedArray()), cborInClass(CBOR_EMPTY_INDEFINITE) decodeCbor serializer())
-        assertContentEquals(cborInClass(CBOR_EMPTY_INDEFINITE), BytesArray2(EMPTY.toTypedArray()) encodeCbor serializer())
+        assertContentEquals(
+            cborInClass(CBOR_EMPTY_INDEFINITE),
+            BytesArray2(EMPTY.toTypedArray()) encodeCbor serializer()
+        )
 
         assertEquals(BytesArray2(ONE.toTypedArray()), cborInClass(CBOR_ONE_INDEFINITE_x255) decodeCbor serializer())
         assertContentEquals(
@@ -349,19 +352,28 @@ class MajorStringByteTest {
         assertEquals(BytesList2(ONE.toList()), cborInClass(CBOR_ONE_INDEFINITE_x255) decodeCbor serializer())
         assertContentEquals(cborInClass(CBOR_ONE_INDEFINITE_x255), BytesList2(ONE.toList()) encodeCbor serializer())
 
-        assertEquals(BytesList2(MAX_SIZE0.toList()), cborInClass(CBOR_MAX_SIZE0_INDEFINITE_x255) decodeCbor serializer())
+        assertEquals(
+            BytesList2(MAX_SIZE0.toList()),
+            cborInClass(CBOR_MAX_SIZE0_INDEFINITE_x255) decodeCbor serializer()
+        )
         assertContentEquals(
             cborInClass(CBOR_MAX_SIZE0_INDEFINITE_x255),
             BytesList2(MAX_SIZE0.toList()) encodeCbor serializer()
         )
 
-        assertEquals(BytesList2(MIN_SIZE8.toList()), cborInClass(CBOR_MIN_SIZE8_INDEFINITE_x255) decodeCbor serializer())
+        assertEquals(
+            BytesList2(MIN_SIZE8.toList()),
+            cborInClass(CBOR_MIN_SIZE8_INDEFINITE_x255) decodeCbor serializer()
+        )
         assertContentEquals(
             cborInClass(CBOR_MIN_SIZE8_INDEFINITE_x255),
             BytesList2(MIN_SIZE8.toList()) encodeCbor serializer()
         )
 
-        assertEquals(BytesList2(MAX_SIZE8.toList()), cborInClass(CBOR_MAX_SIZE8_INDEFINITE_x255) decodeCbor serializer())
+        assertEquals(
+            BytesList2(MAX_SIZE8.toList()),
+            cborInClass(CBOR_MAX_SIZE8_INDEFINITE_x255) decodeCbor serializer()
+        )
         assertContentEquals(
             cborInClass(CBOR_MAX_SIZE8_INDEFINITE_x255),
             BytesList2(MAX_SIZE8.toList()) encodeCbor serializer()

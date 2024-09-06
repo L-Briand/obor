@@ -223,12 +223,12 @@ internal class CborEncoder(
     }
 
     private inline fun encodeElement(descriptor: SerialDescriptor, index: Int, block: () -> Unit) {
-        if (hasFlag(depth, STRUCTURE) && !hasFlag(depth - 1, TUPLE)) encodeRawString(
-            descriptor.getElementName(index).encodeToByteArray()
-        )
+        if (hasFlag(depth, STRUCTURE) && !hasFlag(depth - 1, TUPLE) && descriptor.elementsCount > index)
+            encodeRawString(descriptor.getElementName(index).encodeToByteArray())
 
         ensureCapacity(1)
         depth++
+        if(descriptor.elementsCount > index)
         updateTrackerWithAnnotations(descriptor.getElementAnnotations(index))
         block()
         clear(depth)

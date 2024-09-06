@@ -11,4 +11,4 @@ plugins {
 
 rootProject.name = "obor"
 
-include(":benchmark")
+//include(":benchmark")
