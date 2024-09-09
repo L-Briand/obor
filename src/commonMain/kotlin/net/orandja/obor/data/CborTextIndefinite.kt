@@ -12,12 +12,13 @@ import net.orandja.obor.io.CborWriter
 import kotlin.experimental.or
 
 @Serializable(CborTextIndefinite.Serializer::class)
-data class CborTextIndefinite(val value: MutableList<CborText>) : CborObject(Kind.TEXT_INDEFINITE), MutableList<CborText> by value {
+data class CborTextIndefinite(val value: MutableList<CborText>) : CborObject(Kind.TEXT_INDEFINITE),
+    MutableList<CborText> by value {
 
     override fun toString(): String = super.toString()
     override fun writeInto(writer: CborWriter) {
         writer.write(MAJOR_TEXT or SIZE_INDEFINITE)
-        for(element in value) element.writeInto(writer)
+        for (element in value) element.writeInto(writer)
         writer.write(HEADER_BREAK)
     }
 

@@ -5,8 +5,9 @@ Before handling major byte `0x40` you need to understand a few things.
 - Kotlin treat `ByteArray`, `Array<Byte>`, `List<Byte>` like a list of many Byte elements. The default behavior is to
   encode them with major array `0x80`. So if you were to encode `byteArrayOf(1, 2, 3)` it will result in `0x83010203`
   not in `0x43010203`. Also, it will encode it byte by byte, which can drastically decrease performance.
-- Conceptually, an indefinite major byte string like `0x5F41004101FF` is like an indefinite array with a start identifier
-  `5F` elements inside `4100` and a closing tag `FF` only the elements are restrained to be major (type 2) bytes. 
+- Conceptually, an indefinite major byte string like `0x5F41004101FF` is like an indefinite array with a start
+  identifier
+  `5F` elements inside `4100` and a closing tag `FF` only the elements are restrained to be major (type 2) bytes.
 
 With that in mind, there are two ways to encode with major (type 2).
 
@@ -53,7 +54,8 @@ println(Cbor.encodeToHexString(Foo(byteArrayOf(1, 2, 3))))
     - `@CborRawBytes` can be applied on any type that looks like a list of bytes (`ByteArray`, `List<Byte`,
       `Array<Byte>`) and encode it with major (type 2) byte instead of major (type 4) array. **It will still write each
       element one by one**.
-    - `@CborIndefinite` if applied on top of `@CborRawByte` it will encode the bytes in chunk of 255. 255 is arbitrary and
+    - `@CborIndefinite` if applied on top of `@CborRawByte` it will encode the bytes in chunk of 255. 255 is arbitrary
+      and
       hard coded inside the serializer.
 
 Examples:

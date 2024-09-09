@@ -26,6 +26,10 @@ repositories {
 }
 
 kotlin {
+
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
     jvm {
         withJava()
         withSourcesJar(true)

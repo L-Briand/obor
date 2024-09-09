@@ -6,7 +6,8 @@ CBOR major type 2, 3, 4 and 5 can be written as *indefinite* by merging the majo
 - Major (type 3) indefinite string is described [here](string)
 
 For Major types 4 and 5, you can use
-the [CborIndefinite.kt](../src/commonMain/kotlin/net/orandja/obor/annotations/CborIndefinite.kt) annotation to indicate the
+the [CborIndefinite.kt](../src/commonMain/kotlin/net/orandja/obor/annotations/CborIndefinite.kt) annotation to indicate
+the
 serializer to encode the list or an object with the indefinite marker.
 
 Example:

@@ -37,7 +37,8 @@ println(Cbor.encodeToHexString(Foo(listOf("foo", "bar"))))
 //       FF         # primitive(*)
 ```
 
-Or use the [CborIndefinite.kt](../src/commonMain/kotlin/net/orandja/obor/annotations/CborIndefinite.kt) annotation, it will
+Or use the [CborIndefinite.kt](../src/commonMain/kotlin/net/orandja/obor/annotations/CborIndefinite.kt) annotation, it
+will
 split the string in chunk of 255 characters and encode it with indefinite text string.
 
 Example :
