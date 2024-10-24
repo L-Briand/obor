@@ -12,7 +12,7 @@ For Jvm:
 ```kotlin
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:x.y.z")
-    implementation("net.orandja.obor:obor:2.1.2")
+    implementation("net.orandja.obor:obor:2.1.3")
 }
 ```
 
@@ -25,7 +25,7 @@ kotlin {
         getByName("commonMain") {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:x.y.z")
-                implementation("net.orandja.obor:obor:2.1.2")
+                implementation("net.orandja.obor:obor:2.1.3")
             }
         }
     }
