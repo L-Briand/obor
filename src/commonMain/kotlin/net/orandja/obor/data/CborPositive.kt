@@ -28,7 +28,7 @@ data class CborPositive(val value: ULong) : CborObject(Kind.POSITIVE) {
         withWriter: (CborWriter.() -> Unit) -> ByteArray,
     ) {
         val cbor = withWriter { writeMajor64(MAJOR_POSITIVE, value.toLong()) }
-        elements += Description(depth, cbor, "unsigned($value)")
+        elements += Description(depth, cbor, "positive($value)")
     }
 
     internal object Serializer : KSerializer<CborPositive> {
