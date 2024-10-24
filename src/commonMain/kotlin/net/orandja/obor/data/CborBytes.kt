@@ -33,7 +33,7 @@ data class CborBytes(val value: ByteArray) : CborObject(Kind.BYTES) {
         elements += Description(depth + 1, value, buildString {
             append('"')
             for (byte in value) {
-                val char = Char(byte.toInt())
+                val char = Char(byte.toUByte().toInt())
                 append(
                     if (char.isISOControl() || char.isDefined()) "\\u${char.code.toString().padStart(4, '0')}"
                     else char.toString()

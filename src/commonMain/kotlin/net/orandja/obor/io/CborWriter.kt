@@ -28,7 +28,7 @@ interface CborWriter : ByteWriter {
         private val buffer: ByteArray = ByteArray(9)
 
         override fun writeMajor8(major: Byte, value: Byte) {
-            if (value and SIZE_MASK < SIZE_8) write(major or value)
+            if (value in 0..<SIZE_8) write(major or value)
             else writeHeader8(major or SIZE_8, value)
         }
 

@@ -162,17 +162,17 @@ sealed class CborObject(val kind: Kind) {
     // Utils
 
     protected fun sizeOfMajor(value: Long) = when {
-        value < SIZE_8 -> 1L
-        value <= 0xFFL -> 2L
-        value <= 0xFFFFL -> 3L
-        value <= 0xFFFF_FFFFL -> 5L
+        value in 0..<SIZE_8 -> 1L
+        value in 0..0xFFL -> 2L
+        value in 0..0xFFFFL -> 3L
+        value in 0..0xFFFF_FFFFL -> 5L
         else -> 9L
     }
 
     protected fun sizeOfMajor(value: Int) = when {
-        value < SIZE_8 -> 1L
-        value <= 0xFFL -> 2L
-        value <= 0xFFFFL -> 3L
+        value in 0..<SIZE_8 -> 1L
+        value in 0..0xFFL -> 2L
+        value in 0..0xFFFFL -> 3L
         else -> 5L
     }
 }
